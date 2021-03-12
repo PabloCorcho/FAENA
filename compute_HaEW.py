@@ -123,10 +123,12 @@ class Compute_binned_equivalent_width(object):
         
         hdr['COMMENT 1'] = "H alpha equivalent width map"
         hdr['COMMENT 2'] = "H alpha equivalent width error map"
+        hdr['COMMENT 3'] = "Bins map"
         
         image_list.append(fits.PrimaryHDU(header=hdr))        
         image_list.append(fits.ImageHDU(self.ew_map))
         image_list.append(fits.ImageHDU(self.ew_map_err))
+        image_list.append(fits.ImageHDU(self.cube.bin_map))
                     
         hdu = fits.HDUList(image_list)
 

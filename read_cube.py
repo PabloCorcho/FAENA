@@ -28,6 +28,7 @@ class Cube(object):
     Cube properties:
         - Dimensions
         - Wavelength (wl) range
+        - Flux 
     
     Default flux units: 'erg/s/cm2/AA'        
     Default wavelength units: AA

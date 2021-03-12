@@ -140,6 +140,7 @@ class ComputeBinnedPhotometry(object):
         
         for ith in range(len(self.bands)):
             hdr['COMMENT '+str(ith)] = self.bands[ith]+"-band IMAGE AB mags"
+        hdr['COMMENT '+str(ith+1)] = "Bins map"
         
         image_list.append(fits.PrimaryHDU(header=hdr))
         
@@ -147,6 +148,8 @@ class ComputeBinnedPhotometry(object):
             image_list.append(fits.ImageHDU(self.photometry_map[ith, :, :]))
             image_list.append(fits.ImageHDU(self.photometry_map_err[ith, :, :]))
             
+        image_list.append(fits.ImageHDU(self.cube.bin_map))
+        
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
