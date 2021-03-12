@@ -43,7 +43,7 @@ class Filter(object):
         # absolute_path = os.path.join(absolute_path, '..','Filters')
         
         
-        absolute_path = '/home/pablo/IFU-Tools/measurements/Filters'        
+        absolute_path = '/home/pablo/FAENA/measurements/Filters'        
         
 #        absolute_path = os.path.join(absolute_path, 'Filters')
         filters_path = {'u':os.path.join(absolute_path, 'SDSS','u.dat'),
