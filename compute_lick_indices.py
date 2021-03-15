@@ -151,40 +151,40 @@ if __name__=='__main__':
     flux = cube.flux
     flux_error = cube.flux_error
     
-    red_band = (wl>6540)&(wl<6580)
+    # red_band = (wl>6540)&(wl<6580)
     
-    ref_image = np.nanmean(flux[red_band, :, :], axis=0)
-    ref_image[ref_image<=0] = np.nan
-    # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
-    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
-    ref_noise[ref_noise<=0] = np.nan
+    # ref_image = np.nanmean(flux[red_band, :, :], axis=0)
+    # ref_image[ref_image<=0] = np.nan
+    # # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
+    # ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
+    # ref_noise[ref_noise<=0] = np.nan
     
-    very_low_sn = ref_image/ref_noise < 0.01
-    ref_image[very_low_sn] = np.nan
-    ref_noise[very_low_sn] = np.nan
+    # very_low_sn = ref_image/ref_noise < 0.01
+    # ref_image[very_low_sn] = np.nan
+    # ref_noise[very_low_sn] = np.nan
 
-    cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
-    cube.bin_cube()
+    # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
+    # cube.bin_cube()
     
-    lick = ComputeBinnedLick(cube, indices=['Lick_Hb', 'Lick_Mgb',
-                                            'Lick_Fe5270', 'Lick_Fe5335'])
+    # lick = ComputeBinnedLick(cube, indices=['Lick_Hb', 'Lick_Mgb',
+    #                                         'Lick_Fe5270', 'Lick_Fe5335'])
     
-    lick.compute_lick()
+    # lick.compute_lick()
     
-    # photo.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Lick/NGC0001.fits')
+    # # photo.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Lick/NGC0001.fits')
     
-    hbeta = lick.lick_map[0, :, :]
-    mgfe = np.sqrt(lick.lick_map[1, :, :]*(0.72*lick.lick_map[2, :, :]+\
-                                           0.28*lick.lick_map[3, :, :]))
+    # hbeta = lick.lick_map[0, :, :]
+    # mgfe = np.sqrt(lick.lick_map[1, :, :]*(0.72*lick.lick_map[2, :, :]+\
+    #                                        0.28*lick.lick_map[3, :, :]))
         
-    plt.figure()
-    plt.imshow(hbeta, cmap='jet')
-    plt.colorbar()
+    # plt.figure()
+    # plt.imshow(hbeta, cmap='jet')
+    # plt.colorbar()
         
     
-    plt.figure()
-    plt.imshow(mgfe, cmap='jet', vmin=0.5, vmax=4)
-    plt.colorbar()
+    # plt.figure()
+    # plt.imshow(mgfe, cmap='jet', vmin=0.5, vmax=4)
+    # plt.colorbar()
     
     lick = ComputeLick(cube, indices=['Lick_Hb', 'Lick_Mgb',
                                             'Lick_Fe5270', 'Lick_Fe5335'])

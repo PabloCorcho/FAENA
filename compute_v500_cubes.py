@@ -52,7 +52,9 @@ for i in range(len(paths)):
     photo.compute_photometry()
     
     lick = ComputeLick(cube, indices=['Lick_Mgb', 'Lick_Fe5270', 'Lick_Fe5335'])
+    lick.compute_lick()
     
+
     equivalent_width.save_fits(
         '/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'.fits')
     
