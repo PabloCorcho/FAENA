@@ -248,8 +248,7 @@ class magnitude(Filter):
             mean_flux_err = np.nansum(self.flux_err/self.nu*self.filter
                                           )/np.nansum(self.filter)
             integral_flux_err = mean_flux_err/np.sqrt(
-                len(self.filter[self.filter>0.01]))
-            print(integral_flux_err)
+                len(self.filter[self.filter>0.01]))            
             rel_flux_err = np.abs(integral_flux_err/integral_flux)
             
             

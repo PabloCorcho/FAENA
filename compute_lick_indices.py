@@ -44,6 +44,9 @@ class ComputeLick(object):
                 flux_ij = flux[:, i_elem, j_elem]                                            
                 flux_ij_err = flux_error[:, i_elem, j_elem]
                 
+                if flux_ij.sum() <= 0:
+                    continue
+                                
                 for element in range(len(self.indices)):
                     Lick = Lick_index(lick_index_name=self.indices[element], 
                                       lamb=self.cube.wl, 
@@ -106,6 +109,10 @@ class ComputeBinnedLick(object):
         for i_elem in range(self.cube.nbins):                        
                 flux_i = flux[:, i_elem]                                                            
                 flux_i_err = flux_error[:, i_elem]
+                
+                if flux_i.sum() <= 0:
+                    continue
+                
                 bad_px = np.isnan(flux_i)
                 mask = self.cube.bin_map == i_elem                
                 for element in range(len(self.indices)):

@@ -54,7 +54,8 @@ for i in range(len(paths)):
     lick = ComputeLick(cube, indices=['Lick_Mgb', 'Lick_Fe5270', 'Lick_Fe5335'])
     lick.compute_lick()
     
-
+    cube.close_cube()
+    
     equivalent_width.save_fits(
         '/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'.fits')
     
@@ -123,6 +124,8 @@ for i in range(len(paths)):
     photo.compute_photometry()
     
     lick = ComputeBinnedLick(cube, indices=['Lick_Mgb', 'Lick_Fe5270', 'Lick_Fe5335'])
+    
+    cube.close_cube()
     
     equivalent_width.save_fits(
         '/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'_binned.fits')

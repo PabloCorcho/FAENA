@@ -41,6 +41,9 @@ class Cube(object):
     def read_cube(self):
         self.cube = fits.open(self.path_to_cube)
 
+    def close_cube(self):
+        self.cube.close()
+        
     def get_axis(self):
         # n_hdu = len(self.cube)
         pass

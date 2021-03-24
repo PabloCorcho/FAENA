@@ -35,7 +35,7 @@ class Compute_equivalent_width(object):
         # for i_elem in [18]:
         #     for j_elem in [60]:
     
-                print('Computing region ({},{})'.format(i_elem, j_elem))
+                # print('Computing region ({},{})'.format(i_elem, j_elem))
                 flux_ij = self.cube.flux[:, i_elem, j_elem]                                            
                 flux_ij_err = self.cube.flux_error[:, i_elem, j_elem]
                 

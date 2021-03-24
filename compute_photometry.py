@@ -48,6 +48,9 @@ class ComputePhotometry(object):
                 flux_ij = flux[:, i_elem, j_elem]                                            
                 flux_ij_err = flux_error[:, i_elem, j_elem]
                 
+                if flux_ij.sum() <= 0:
+                    continue
+                
                 for element in range(len(self.bands)):
                     mag = photometry.magnitude(absolute=abs_phot, 
                                            filter_name=self.bands[element], 
@@ -119,6 +122,10 @@ class ComputeBinnedPhotometry(object):
         for i_elem in range(self.cube.nbins):                        
                 flux_i = flux[:, i_elem]                                                            
                 flux_i_err = flux_error[:, i_elem]
+                
+                if flux_i.sum() <= 0:
+                    continue
+                
                 bad_px = np.isnan(flux_i)
                 mask = self.cube.bin_map == i_elem                
                 for element in range(len(self.bands)):

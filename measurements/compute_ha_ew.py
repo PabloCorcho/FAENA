@@ -54,9 +54,7 @@ class Compute_HaEW(object):
         mean_right_spectra = np.nansum(
                 self.spectra[right_lamb_pos]/self.errors[right_lamb_pos]**2
                 )*variance_rigth_spectra
-        
-        print('\n', np.nansum(1.0/self.errors[right_lamb_pos]**2),
-              self.spectra[right_lamb_pos])
+                
         # std_right = np.std(self.spectra[right_lamb_pos])
         std_right = np.sqrt(variance_rigth_spectra)
         
