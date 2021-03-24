@@ -22,6 +22,8 @@ from matplotlib.colors import LogNorm
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 
+import timeit
+
 blues = cm.get_cmap('winter', 100)
 reds = cm.get_cmap('autumn', 100)
 
@@ -34,6 +36,7 @@ newcmp = ListedColormap(newcolors, name='RedsBlues')
     
 paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
 
+output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/'
 for i in range(len(paths)):    
     path_i = paths[i][43:-20]
     print(i)    
@@ -57,43 +60,43 @@ for i in range(len(paths)):
     cube.close_cube()
     
     equivalent_width.save_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'.fits')
+        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'EW/'+path_i+'.fits')
     
     photo.save_phot_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/Photometry/'+path_i+'.fits')
+        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Photometry/'+path_i+'.fits')
     
-    lick.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/V500/Lick/'+path_i+'_binned.fits')
-    
-    ##########################################################################
-    ew_fig = plt.figure(figsize=(8,4))
-    
-    ax = ew_fig.add_subplot(221, title=path_i)
-    mappable = ax.imshow(-equivalent_width.ew_map, vmax=30, vmin=-5, cmap=newcmp,
-               aspect='auto')
-    plt.colorbar(mappable=mappable, ax=ax, label='EW')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-    ax = ew_fig.add_subplot(222)
-    mappable= ax.imshow(equivalent_width.ew_map_err/np.abs(equivalent_width.ew_map),
-               norm=LogNorm(vmin=0.1, vmax=10), cmap='inferno',
-               aspect='auto')
-    plt.colorbar(mappable=mappable, ax=ax, label=r'$\frac{\sigma}{|EW|}$')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
+    lick.save_phot_fits(output_folder+'Lick/'+path_i+'_binned.fits')
     
     ##########################################################################
+    # ew_fig = plt.figure(figsize=(8,4))
     
-    g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
-    mu_r = photo.photometry_map[1, :, :]+2.5*np.log10(cube.fiber_surface)
+    # ax = ew_fig.add_subplot(221, title=path_i)
+    # mappable = ax.imshow(-equivalent_width.ew_map, vmax=30, vmin=-5, cmap=newcmp,
+    #            aspect='auto')
+    # plt.colorbar(mappable=mappable, ax=ax, label='EW')
+    # ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
+    # ax = ew_fig.add_subplot(222)
+    # mappable= ax.imshow(equivalent_width.ew_map_err/np.abs(equivalent_width.ew_map),
+    #            norm=LogNorm(vmin=0.1, vmax=10), cmap='inferno',
+    #            aspect='auto')
+    # plt.colorbar(mappable=mappable, ax=ax, label=r'$\frac{\sigma}{|EW|}$')
+    # ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
     
-    ageing_fig = plt.figure(figsize=(8,4))
-    ax = ageing_fig.add_subplot(121, title=path_i)
-    mappable= ax.scatter(g_r[mu_r<26],
-            -equivalent_width.ew_map[mu_r<26], 
-            c=mu_r[mu_r<26],
-            s=1, vmin=17, vmax=26, cmap='brg')
-    plt.colorbar(mappable=mappable, ax=ax)
-    ax.set_xlim(0., 1.1)
-    ax.set_ylim(-10, 100)
-    ax.set_yscale('symlog', linthres=0.5)
+    ##########################################################################
+    
+    # g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
+    # mu_r = photo.photometry_map[1, :, :]
+    
+    # ageing_fig = plt.figure(figsize=(8,4))
+    # ax = ageing_fig.add_subplot(121, title=path_i)
+    # mappable= ax.scatter(g_r[mu_r<24],
+    #         -equivalent_width.ew_map[mu_r<24], 
+    #         c=mu_r[mu_r<24],
+    #         s=1, vmin=17, vmax=24, cmap='gist_earth_r')
+    # plt.colorbar(mappable=mappable, ax=ax)
+    # ax.set_xlim(0., 1.1)
+    # ax.set_ylim(-10, 100)
+    # ax.set_yscale('symlog', linthres=0.5)
     
     # =========================================================================
     #     BINNED
@@ -102,12 +105,12 @@ for i in range(len(paths)):
     flux = cube.flux
     flux_error = cube.flux_error
     
-    red_band = (wl>6540)&(wl<6580)
+    red_band = (wl>6550)&(wl<6570)
     
     
     ref_image = np.nanmean(flux[red_band, :, :], axis=0)
     ref_image[ref_image<=0] = np.nan    
-    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
+    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)/np.sqrt(len(red_band[red_band]))
     ref_noise[ref_noise<=0] = np.nan
     
     very_low_sn = ref_image/ref_noise < 0.01
@@ -128,43 +131,44 @@ for i in range(len(paths)):
     cube.close_cube()
     
     equivalent_width.save_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'_binned.fits')
+        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'EW/'+path_i+'_binned.fits')
     
     photo.save_phot_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/Photometry/'+path_i+'_binned.fits')
+        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Photometry/'+path_i+'_binned.fits')
     
-    lick.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/V500/Lick/'+path_i+'_binned.fits')
+    lick.save_phot_fits(
+        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Lick/'+path_i+'_binned.fits')
     ##########################################################################
-    ax = ew_fig.add_subplot(223, title=path_i)
-    mappable = ax.imshow(-equivalent_width.ew_map, vmax=30, vmin=-5, cmap=newcmp,
-               aspect='auto')
-    plt.colorbar(mappable=mappable, ax=ax, label='EW')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-    ax = ew_fig.add_subplot(224)
-    mappable = ax.imshow(equivalent_width.ew_map_err/np.abs(equivalent_width.ew_map),
-               norm=LogNorm(vmin=0.1, vmax=10), cmap='inferno',
-               aspect='auto')
-    plt.colorbar(mappable=mappable, ax=ax, label=r'$\frac{\sigma}{|EW|}$')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
+    # ax = ew_fig.add_subplot(223, title=path_i)
+    # mappable = ax.imshow(-equivalent_width.ew_map, vmax=30, vmin=-5, cmap=newcmp,
+    #            aspect='auto')
+    # plt.colorbar(mappable=mappable, ax=ax, label='EW')
+    # ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
+    # ax = ew_fig.add_subplot(224)
+    # mappable = ax.imshow(equivalent_width.ew_map_err/np.abs(equivalent_width.ew_map),
+    #            norm=LogNorm(vmin=0.1, vmax=10), cmap='inferno',
+    #            aspect='auto')
+    # plt.colorbar(mappable=mappable, ax=ax, label=r'$\frac{\sigma}{|EW|}$')
+    # ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
     
     
-    ew_fig.savefig('/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'.png')
-    plt.close()
+    # ew_fig.savefig('/home/pablo/obs_data/CALIFA/DR3/V500/EW/'+path_i+'.png')
+    # plt.close()
     ##########################################################################
-    g_r = photo.photometry_list[0, :]-photo.photometry_list[1, :]
-    mu_r = photo.photometry_list[1, :]+2.5*np.log10(cube.bin_surface)
+    # g_r = photo.photometry_list[0, :]-photo.photometry_list[1, :]
+    # mu_r = photo.photometry_list[1, :]
         
-    ax = ageing_fig.add_subplot(122, title=path_i)
-    mappable = ax.scatter(g_r[mu_r<26],
-            -equivalent_width.ew_list[mu_r<26], 
-            c=mu_r[mu_r<26],
-            s=1, vmin=17, vmax=26, cmap='brg')
-    plt.colorbar(mappable=mappable, ax=ax)
-    ax.set_xlim(0., 1.1)
-    ax.set_ylim(-10, 100)
-    ax.set_yscale('symlog', linthres=0.5)
-    ageing_fig.savefig('/home/pablo/obs_data/CALIFA/DR3/V500/ageing_diagram/'+path_i+'.png')
-    plt.close()
+    # ax = ageing_fig.add_subplot(122, title=path_i)
+    # mappable = ax.scatter(g_r[mu_r<24],
+    #         -equivalent_width.ew_list[mu_r<24], 
+    #         c=mu_r[mu_r<24],
+    #         s=1, vmin=17, vmax=24, cmap='gist_earth_r')
+    # plt.colorbar(mappable=mappable, ax=ax)
+    # ax.set_xlim(0., 1.1)
+    # ax.set_ylim(-10, 100)
+    # ax.set_yscale('symlog', linthres=0.5)
+    # ageing_fig.savefig('/home/pablo/obs_data/CALIFA/DR3/V500/ageing_diagram/'+path_i+'.png')
+    # plt.close()
         
     # if i == 10:
     break
