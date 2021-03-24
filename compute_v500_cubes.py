@@ -37,9 +37,11 @@ newcmp = ListedColormap(newcolors, name='RedsBlues')
 paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
 
 output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/'
+
 for i in range(len(paths)):    
     path_i = paths[i][43:-20]
     print(i)    
+    start = timeit.default_timer()
     
     cube = CALIFACube(path=path_i, abs_path=False)
     
@@ -166,4 +168,6 @@ for i in range(len(paths)):
     # plt.close()
         
     # if i == 10:
-    break
+    stop = timeit.default_timer()
+    print('Time: {:.3} secs'.format(stop - start))          
+    
