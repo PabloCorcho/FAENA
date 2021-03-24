@@ -59,11 +59,9 @@ for i in range(len(paths)):
     
     cube.close_cube()
     
-    equivalent_width.save_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'EW/'+path_i+'.fits')
+    equivalent_width.save_fits(output_folder+'EW/'+path_i+'.fits')
     
-    photo.save_phot_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Photometry/'+path_i+'.fits')
+    photo.save_phot_fits(output_folder+'Photometry/'+path_i+'.fits')
     
     lick.save_phot_fits(output_folder+'Lick/'+path_i+'_binned.fits')
     
@@ -130,14 +128,11 @@ for i in range(len(paths)):
     
     cube.close_cube()
     
-    equivalent_width.save_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'EW/'+path_i+'_binned.fits')
+    equivalent_width.save_fits(output_folder+'EW/'+path_i+'_binned.fits')
     
-    photo.save_phot_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Photometry/'+path_i+'_binned.fits')
+    photo.save_phot_fits(output_folder+'Photometry/'+path_i+'_binned.fits')
     
-    lick.save_phot_fits(
-        '/home/pablo/obs_data/CALIFA/DR3/V500/'+'Lick/'+path_i+'_binned.fits')
+    lick.save_phot_fits(output_folder+'Lick/'+path_i+'_binned.fits')
     ##########################################################################
     # ax = ew_fig.add_subplot(223, title=path_i)
     # mappable = ax.imshow(-equivalent_width.ew_map, vmax=30, vmin=-5, cmap=newcmp,
