@@ -14,13 +14,15 @@ class Compute_HaEW(object):
         https://arxiv.org/pdf/astro-ph/0606341.pdf
     """
     def __init__(self, spectrum, wl, errors):
-        self.blue_band =  [6510, 6530]
-        self.red_band = [6600., 6620.]
+        # self.blue_band =  [6510, 6530]
+        # self.red_band = [6600., 6620.]
+        self.blue_band =  [6470, 6530]
+        self.red_band = [6600., 6660.]
         self.central = [6550., 6575.]
         
         self.spectra = spectrum
         self.wl = wl
-        self.errors = errors
+        self.errors = np.float64(errors)
         
         self.compute_ew()
         
@@ -29,23 +31,34 @@ class Compute_HaEW(object):
         
         left_lamb_pos = np.where((self.wl>=self.blue_band[0]
                                   )&(self.wl<=self.blue_band[-1]))[0]                   
-        mean_left_spectra = np.nansum(
-                self.spectra[left_lamb_pos]/self.errors[left_lamb_pos]
-                )/np.nansum(1/self.errors[left_lamb_pos])
         
-        std_left = np.std(self.spectra[left_lamb_pos])
+        variance_left_spectra = 1/np.nansum(1/self.errors[left_lamb_pos]**2)
+        
+        mean_left_spectra = np.nansum(
+                self.spectra[left_lamb_pos]/self.errors[left_lamb_pos]**2
+                )*variance_left_spectra
+                
+        
+        # std_left = np.std(self.spectra[left_lamb_pos])
+        std_left = np.sqrt(variance_left_spectra)
         
         self.lamb_left = (self.blue_band[0]+self.blue_band[-1])/2
-                        
+                                
         # Right pseudo cont
         
         right_lamb_pos = np.where((self.wl>=self.red_band[0]
                                    )&(self.wl<=self.red_band[-1]))[0]    
-        mean_right_spectra = np.nansum(
-                self.spectra[right_lamb_pos]/self.errors[right_lamb_pos]
-                )/np.nansum(1/self.errors[right_lamb_pos])
         
-        std_right = np.std(self.spectra[right_lamb_pos])
+        variance_rigth_spectra = 1/np.nansum(1/self.errors[right_lamb_pos]**2)
+        
+        mean_right_spectra = np.nansum(
+                self.spectra[right_lamb_pos]/self.errors[right_lamb_pos]**2
+                )*variance_rigth_spectra
+        
+        print('\n', np.nansum(1.0/self.errors[right_lamb_pos]**2),
+              self.spectra[right_lamb_pos])
+        # std_right = np.std(self.spectra[right_lamb_pos])
+        std_right = np.sqrt(variance_rigth_spectra)
         
         self.lamb_right = (self.red_band[0]+self.red_band[-1])/2
         
@@ -76,10 +89,12 @@ class Compute_HaEW(object):
         central_pseudocont = self.pseudocont(central_lamb)
         
         mean_pseudocont = np.nanmean(central_pseudocont)
-        mean_pseudocont_err = np.nanmean(self.pseudocont_err(central_lamb))
+        mean_pseudocont_err = np.nanmean(self.pseudocont_err(central_lamb)
+                                         ) / np.sqrt(len(central_pseudocont))
         
         mean_spectra = np.nanmean(central_spectra)
-        mean_spectra_err = np.nanmean(self.errors[self.central_lamb_pts]) 
+        mean_spectra_err = np.nanmean(self.errors[self.central_lamb_pts]
+                                      ) / np.sqrt(len(central_spectra))
         
         self.mean_signal_to_noise = np.nanmean(mean_spectra/mean_spectra_err)
         
@@ -88,12 +103,12 @@ class Compute_HaEW(object):
         
         
         self.EW = np.trapz(1-central_spectra/central_pseudocont, central_lamb)
-        # self.EW_err = np.sqrt(
-        #     (delta_central/mean_pseudocont*mean_spectra_err)**2+\
-        #     ((delta_central-self.EW)/mean_pseudocont*mean_pseudocont_err)**2 
-        #                      )        
-        self.EW_err = np.sqrt(1+mean_pseudocont/mean_spectra)*(
-            delta_central-self.EW)/self.mean_signal_to_noise
+        self.EW_err = np.sqrt(
+            (delta_central/mean_pseudocont*mean_spectra_err)**2+\
+            ((delta_central-self.EW)/mean_pseudocont*mean_pseudocont_err)**2 
+                               )        
+        # self.EW_err = np.sqrt(1+mean_pseudocont/mean_spectra)*(
+        #     delta_central-self.EW)/self.mean_signal_to_noise
             
     def plot_ew(self):
         from matplotlib import pyplot as plt
@@ -105,6 +120,34 @@ class Compute_HaEW(object):
         ax.axvline(self.central[-1], color='lime')
         
         ax.plot(self.wl, self.spectra, '.-', color='k')
+        ###
+        central_band = np.linspace(self.central[0],self.central[1], 100)
+        line_flux = -self.EW*self.pseudocont(6563)        
+        line_sigma = 2.5
+        line_profile = np.exp(-(central_band-6563)**2/2/line_sigma**2
+                              ) * 1/np.sqrt(2*np.pi)/line_sigma
+        
+        ax.plot(central_band, 
+                self.pseudocont(central_band)+line_flux*line_profile,
+                '--', color='k')
+        
+        line_flux_low = -(self.EW+self.EW_err)*self.pseudocont(6563)        
+        line_flux_high = -(self.EW-self.EW_err)*self.pseudocont(6563)        
+        
+        ax.fill_between(central_band, 
+                    self.pseudocont(central_band)+line_flux_low*line_profile,
+                    self.pseudocont(central_band)+line_flux_high*line_profile,
+                    alpha=0.5, color='blue')
+        
+        # ax.plot(central_band, 
+        #         self.pseudocont(central_band)+line_flux*line_profile,
+        #         ':', color='k')
+        
+        # line_flux = -(self.EW-self.EW_err)*self.pseudocont(6563)        
+        # ax.plot(central_band, 
+        #         self.pseudocont(central_band)+line_flux*line_profile,
+        #         '--', color='k')               
+        ###
         ax.fill_between(self.wl, self.spectra-self.errors,
                                  self.spectra+self.errors,
                                  color='k', alpha=0.3)
@@ -119,9 +162,9 @@ class Compute_HaEW(object):
                     xycoords='axes fraction', ha='left')
         ax.set_xlim(self.blue_band[0], self.red_band[-1])
         ax.set_ylim(np.nanmin(
-            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]), 
+            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*0.90), 
                     np.nanmax(
-            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])])
+            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*1.1)
                     )
         ax.set_yscale('log')
         

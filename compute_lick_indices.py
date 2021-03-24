@@ -69,6 +69,7 @@ class ComputeLick(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)
         
 class ComputeBinnedLick(object):
@@ -137,6 +138,7 @@ class ComputeBinnedLick(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)        
         
 
@@ -202,7 +204,7 @@ if __name__=='__main__':
     plt.colorbar()
 
     plt.figure()
-    plt.imshow(hbeta_err/np.abs(hbeta), cmap='jet', vmax=.1, vmin=0)
+    plt.imshow(hbeta_err/np.abs(hbeta), cmap='jet', vmax=.5, vmin=0)
     plt.colorbar()
     
     plt.figure()

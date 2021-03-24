@@ -32,7 +32,7 @@ class Lick_index(object):
     def increase_resolution_pts(self, flux, flux_err, lamb, resolution=1000):        
         
         new_lamb = np.linspace(self.blue_band[0],
-                                     self.red_band[-1],
+                                     self.red_band[1],
                                      resolution)
         new_flux = np.interp(new_lamb, lamb, flux)
         
@@ -43,26 +43,27 @@ class Lick_index(object):
     def compute_pseudocont(self):
         
         # Take all points within the blue band: lambda<lambda_blue_2     
-        left_lamb_pos = np.where(self.lamb<=self.blue_band[-1])[0]           
-        mean_left_flux = np.nanmean(self.flux[left_lamb_pos])
-        lamb_left = (self.blue_band[0]+self.blue_band[-1])/2
-#        self.blue_error =  [np.nanstd(self.flux[left_lamb_pos]),
-#                            len(left_lamb_pos)]
-        delta_Cb = np.sqrt(np.nanmean(self.flux_err[left_lamb_pos]**2))
+        left_lamb_pos = np.where(self.lamb<=self.blue_band[1])[0]                   
+        variance_left_spectra = 1/np.nansum(1/self.flux_err[left_lamb_pos]**2)
+        mean_left_flux = np.nansum(
+                self.flux[left_lamb_pos]/self.flux_err[left_lamb_pos]**2
+                )*variance_left_spectra       
+        mean_left_flux = np.nanmean(self.flux[left_lamb_pos])                
+        delta_Cb = np.sqrt(variance_left_spectra)
         
         # Take all points within the red band: lambda>lambda_red_1
-        right_lamb_pos = np.where(self.lamb>=self.red_band[0])[0]    
-        mean_right_flux = np.nanmean(self.flux[right_lamb_pos])    
-        lamb_right = (self.red_band[0]+self.red_band[-1])/2
-#        self.red_error =  [np.nanstd(self.flux[right_lamb_pos]), 
-#                           len(right_lamb_pos)]
+        
+        right_lamb_pos = np.where(self.lamb<=self.blue_band[1])[0]                   
+        variance_right_spectra = 1/np.nansum(1/self.flux_err[right_lamb_pos]**2)
+        mean_right_flux = np.nansum(
+                self.flux[right_lamb_pos]/self.flux_err[right_lamb_pos]**2
+                )*variance_right_spectra        
+        mean_right_flux = np.nanmean(self.flux[right_lamb_pos])        
         delta_Cr = np.sqrt(np.nanmean(self.flux_err[right_lamb_pos]**2))
         
-        # Fit to a straight line        
-#        lamb_line = (lamb_left, lamb_right)
-#        A = np.vstack([lamb_line, np.ones_like(lamb_line)]).T        
-#        m, c = np.linalg.lstsq(A, [mean_left_flux, mean_right_flux])[0]
         
+        lamb_left = (self.blue_band[0]+self.blue_band[1])/2
+        lamb_right = (self.red_band[0]+self.red_band[1])/2
         delta_lamb = lamb_right-lamb_left
                 
         
@@ -76,20 +77,25 @@ class Lick_index(object):
             
     def compute_Lick(self):
         central_lamb_pts = np.where((self.lamb>=self.index_band[0])&(
-                self.lamb<=self.index_band[-1]))[0]
+                self.lamb<=self.index_band[1]))[0]
         
         central_lamb = self.lamb[central_lamb_pts]
         
         central_flux = self.flux[central_lamb_pts]
-        central_flux_err = self.flux_err[central_lamb_pts]
+        central_flux_err = self.flux_err[central_lamb_pts]        
+        mean_flux_err = np.nanmean(central_flux_err) / np.sqrt(
+            len(central_flux_err))
         
         central_pseudocont = self.pseudocont(central_lamb)
+        mean_pseudocont = np.nanmean(central_pseudocont)
         central_pseudocont_err = self.pseudocont_err(central_lamb)
+        mean_pseudocont_err = np.nanmean(self.pseudocont_err(central_lamb)
+                                         ) / np.sqrt(len(central_pseudocont))
         
         central_lamb_int = np.insert(central_lamb, 0,
                                      2*central_lamb[0]-central_lamb[1])                                           
         delta_lamb  = np.ediff1d(central_lamb_int)
-        
+        delta_central = self.index_band[1]-self.index_band[0]
 #        self.lick_index = np.trapz(1-central_flux/central_pseudocont, 
 #                                   central_lamb)
         
@@ -97,13 +103,11 @@ class Lick_index(object):
             self.lick_index = np.nansum((1-central_flux/central_pseudocont)
             *delta_lamb
                 )
-        
-        
-            self.lick_index_err = np.nansum(
-                (delta_lamb*central_flux_err/central_pseudocont)**2) +\
-                np.nansum(
-                (delta_lamb*central_pseudocont_err*central_flux/
-                                       central_pseudocont**2)**2)
+                
+            self.lick_index_err = np.sqrt(
+            (delta_central/mean_pseudocont*mean_flux_err)**2+\
+            ((delta_central-self.lick_index)/mean_pseudocont*mean_pseudocont_err)**2 
+                               )        
         
             self.lick_index_err = np.sqrt(self.lick_index_err)
                                        

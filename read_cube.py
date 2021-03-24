@@ -144,6 +144,9 @@ class CALIFACube(Cube):
                         
     def get_flux(self):
         self.flux = self.cube[0].data*1e-16
+        # BAD SKY SUBSTRACTION
+        self.flux[self.flux<0] = 0
+        #
         self.flux_units = 'erg/s/cm2/AA'        
         self.flux_error = self.cube[1].data*1e-16
         
@@ -162,7 +165,7 @@ class CALIFACube(Cube):
             print('Not in rest frame')                               
         
     def get_bad_pixels(self):
-        """BAD PIXELS: 0 == GOOD, 1 == BAD"""                
+        """BAD PIXELS: 1 == GOOD, 0 == BAD"""                
         self.bad_pix = np.array(self.cube[0].data, dtype=bool)
         rel_err = self.flux_error/self.flux
         self.bad_pix[rel_err>1e2] = False

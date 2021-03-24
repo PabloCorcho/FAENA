@@ -77,6 +77,7 @@ class ComputePhotometry(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)
         
 class ComputeBinnedPhotometry(object):
@@ -153,6 +154,7 @@ class ComputeBinnedPhotometry(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)        
         
 
@@ -167,39 +169,39 @@ if __name__=='__main__':
     flux = cube.flux
     flux_error = cube.flux_error
     
-    red_band = (wl>6540)&(wl<6580)
+    # red_band = (wl>6540)&(wl<6580)
     
-    ref_image = np.nanmean(flux[red_band, :, :], axis=0)
-    ref_image[ref_image<=0] = np.nan
-    # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
-    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
-    ref_noise[ref_noise<=0] = np.nan
+    # ref_image = np.nanmean(flux[red_band, :, :], axis=0)
+    # ref_image[ref_image<=0] = np.nan
+    # # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
+    # ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
+    # ref_noise[ref_noise<=0] = np.nan
     
-    very_low_sn = ref_image/ref_noise < 0.01
-    ref_image[very_low_sn] = np.nan
-    ref_noise[very_low_sn] = np.nan
+    # very_low_sn = ref_image/ref_noise < 0.01
+    # ref_image[very_low_sn] = np.nan
+    # ref_noise[very_low_sn] = np.nan
 
-    cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
-    cube.bin_cube()
+    # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
+    # cube.bin_cube()
     
-    photo = ComputeBinnedPhotometry(cube, bands=['g', 'r'])
+    # photo = ComputeBinnedPhotometry(cube, bands=['g', 'r'])
     
-    photo.compute_photometry(surface_brightness=True)
+    # photo.compute_photometry(surface_brightness=True)
     
     # photo.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC0001.fits')
     
-    my_g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
-    plt.figure()
-    plt.imshow(my_g_r, vmax=0, vmin=1, cmap='jet')
-    plt.colorbar()
+    # my_g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
+    # plt.figure()
+    # plt.imshow(my_g_r, vmax=0, vmin=1, cmap='jet')
+    # plt.colorbar()
         
-    plt.figure()
-    plt.imshow(photo.photometry_map[1, :, :], vmin=17, vmax=26, cmap='nipy_spectral')
-    plt.colorbar()
+    # plt.figure()
+    # plt.imshow(photo.photometry_map[1, :, :], vmin=17, vmax=26, cmap='nipy_spectral')
+    # plt.colorbar()
     
-    plt.figure()
-    plt.imshow(np.log10(photo.photometry_map_err[1, :, :]),   cmap='nipy_spectral')
-    plt.colorbar()
+    # plt.figure()
+    # plt.imshow(np.log10(photo.photometry_map_err[1, :, :]),   cmap='nipy_spectral')
+    # plt.colorbar()
     
     photo = ComputePhotometry(cube, bands=['g', 'r'])
     
@@ -217,6 +219,7 @@ if __name__=='__main__':
     plt.colorbar()
     
     plt.figure()
-    plt.imshow(np.log10(photo.photometry_map_err[1, :, :]),   cmap='nipy_spectral')
+    plt.imshow(photo.photometry_map_err[1, :, :],   cmap='nipy_spectral',
+               vmax=0.1)
     plt.colorbar()
     

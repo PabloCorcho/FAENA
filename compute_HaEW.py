@@ -28,12 +28,14 @@ class Compute_equivalent_width(object):
         self.ew_map_err = np.zeros_like(self.ew_map)
         self.ew_map_err[:] = np.nan
         
-    def compute_ew(self):
+    def compute_ew(self, plot=False):
         
         for i_elem in range(self.cube.flux.shape[1]):
             for j_elem in range(self.cube.flux.shape[2]):
+        # for i_elem in [18]:
+        #     for j_elem in [60]:
     
-                # print('Computing region ({},{})'.format(i_elem, j_elem))
+                print('Computing region ({},{})'.format(i_elem, j_elem))
                 flux_ij = self.cube.flux[:, i_elem, j_elem]                                            
                 flux_ij_err = self.cube.flux_error[:, i_elem, j_elem]
                 
@@ -49,11 +51,11 @@ class Compute_equivalent_width(object):
                 
                 self.ew_map[i_elem, j_elem] = EW
                 self.ew_map_err[i_elem, j_elem] = EW_err
-                
-                # fig = equivalent_width.plot_ew()
-                # fig.savefig('ew_test/region_{:}_{:}.png'.format(i_elem, 
-                #                                                 j_elem))
-                # plt.close()
+                if plot:
+                    fig = equivalent_width.plot_ew()
+                    fig.savefig('ew_test/region_{:}_{:}.png'.format(i_elem, 
+                                                                    j_elem))
+                    plt.close()
         
     def save_fits(self, path):
         hdr = fits.Header()
@@ -69,6 +71,7 @@ class Compute_equivalent_width(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)
         
 class Compute_binned_equivalent_width(object):
@@ -88,7 +91,7 @@ class Compute_binned_equivalent_width(object):
         self.ew_map_err = np.zeros_like(self.ew_map)
         self.ew_map_err[:] = np.nan
         
-    def compute_ew(self):
+    def compute_ew(self, plot=False):
         
         for i_elem in range(self.cube.nbins):                        
 
@@ -112,10 +115,10 @@ class Compute_binned_equivalent_width(object):
             
             self.ew_map[mask] = EW
             self.ew_map_err[mask] = EW_err
-            
-            # fig = equivalent_width.plot_ew()
-            # fig.savefig('ew_test/binned_region_{:}.png'.format(i_elem))
-            # plt.close()
+            if plot:
+                fig = equivalent_width.plot_ew()
+                fig.savefig('ew_test/binned_region_{:}.png'.format(i_elem))
+                plt.close()
         
     def save_fits(self, path):
         hdr = fits.Header()
@@ -133,6 +136,7 @@ class Compute_binned_equivalent_width(object):
         hdu = fits.HDUList(image_list)
 
         hdu.writeto(path, overwrite=True)
+        hdu.close()
         print('File saved as: '+ path)        
         
 
@@ -150,7 +154,7 @@ if __name__=='__main__':
     
     newcmp = ListedColormap(newcolors, name='RedsBlues')
     
-    cube = CALIFACube(path='NGC2487')
+    cube = CALIFACube(path='IC1528')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=True)            
     cube.get_bad_pixels()
@@ -160,69 +164,62 @@ if __name__=='__main__':
     flux = cube.flux
     flux_error = cube.flux_error
     
-    red_band = (wl>6540)&(wl<6580)
     
-    ref_image = np.nanmean(flux[red_band, :, :], axis=0)
-    ref_image[ref_image<=0] = np.nan
-    # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
-    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
-    ref_noise[ref_noise<=0] = np.nan
-    
-    very_low_sn = ref_image/ref_noise < 0.01
-    ref_image[very_low_sn] = np.nan
-    ref_noise[very_low_sn] = np.nan
-
-    cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
-    cube.bin_cube()
-    
-    photo = Compute_binned_equivalent_width(cube)        
-    photo.compute_ew()
-    
-    plt.figure()
-    plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
-    plt.colorbar()
-    plt.figure()
-    plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
-               cmap='rainbow')
-    plt.colorbar(label=r'$\sigma(EW)/EW$')  
-    
-    # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
-    
-    photo = Compute_equivalent_width(cube)        
-    photo.compute_ew()
-    
-    plt.figure()
-    plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
-    plt.colorbar()
-    plt.figure()
-    plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
-               cmap='rainbow')
-    plt.colorbar(label=r'$\sigma(EW)/EW$')  
-    
-    # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
-    
-    # import pyphot
-    # from pyphot import unit
-    # lib = pyphot.get_library()
-
-    # sdss_r = lib['SDSS_r']
-    # sdss_g = lib['SDSS_g']
-    # g_r = np.zeros((cube.flux.shape[1],cube.flux.shape[2]))
-    
-    # for ith in range(cube.flux.shape[1]):
-    #     for jth in range(cube.flux.shape[2]):
-    #         print(ith, jth)
-    #         spectra = cube.flux[:, ith, jth]
-            
-            
-    #         r_flux = sdss_r.get_flux(cube.wl, spectra)
-    #         g_flux = sdss_g.get_flux(cube.wl, spectra)
-
-    #         r_mag = -2.5 * np.log10(r_flux.value) - sdss_r.AB_zero_mag
-    #         g_mag = -2.5 * np.log10(g_flux.value) - sdss_g.AB_zero_mag
-            
-    #         g_r[ith, jth] = g_mag - r_mag
+    ew = Compute_equivalent_width(cube)
+    ew.compute_ew()
     
     
-    # plt.imshow(my_g_r, vmin=0., vmax=1, cmap='jet')
+    # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
+    # cube.bin_cube()
+    
+    # photo = Compute_binned_equivalent_width(cube)        
+    # photo.compute_ew()
+    
+    # plt.figure()
+    # plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
     # plt.colorbar()
+    # plt.figure()
+    # plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
+    #            cmap='rainbow')
+    # plt.colorbar(label=r'$\sigma(EW)/EW$')  
+    
+    # # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
+    
+    # photo = Compute_equivalent_width(cube)        
+    # photo.compute_ew()
+    
+    # plt.figure()
+    # plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
+    # plt.colorbar()
+    # plt.figure()
+    # plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
+    #            cmap='rainbow')
+    # plt.colorbar(label=r'$\sigma(EW)/EW$')  
+    
+    # # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
+    
+    # # import pyphot
+    # # from pyphot import unit
+    # # lib = pyphot.get_library()
+
+    # # sdss_r = lib['SDSS_r']
+    # # sdss_g = lib['SDSS_g']
+    # # g_r = np.zeros((cube.flux.shape[1],cube.flux.shape[2]))
+    
+    # # for ith in range(cube.flux.shape[1]):
+    # #     for jth in range(cube.flux.shape[2]):
+    # #         print(ith, jth)
+    # #         spectra = cube.flux[:, ith, jth]
+            
+            
+    # #         r_flux = sdss_r.get_flux(cube.wl, spectra)
+    # #         g_flux = sdss_g.get_flux(cube.wl, spectra)
+
+    # #         r_mag = -2.5 * np.log10(r_flux.value) - sdss_r.AB_zero_mag
+    # #         g_mag = -2.5 * np.log10(g_flux.value) - sdss_g.AB_zero_mag
+            
+    # #         g_r[ith, jth] = g_mag - r_mag
+    
+    
+    # # plt.imshow(my_g_r, vmin=0., vmax=1, cmap='jet')
+    # # plt.colorbar()
