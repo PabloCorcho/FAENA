@@ -44,7 +44,7 @@ class ComputePhotometry(object):
         for i_elem in range(flux.shape[1]):
             for j_elem in range(flux.shape[2]):
     
-                # print('Computing region ({},{})'.format(i_elem, j_elem))
+                print('Computing region ({},{})'.format(i_elem, j_elem))
                 flux_ij = flux[:, i_elem, j_elem]                                            
                 flux_ij_err = flux_error[:, i_elem, j_elem]
                 

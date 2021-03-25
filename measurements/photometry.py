@@ -245,14 +245,15 @@ class magnitude(Filter):
             #                             )/np.sqrt(
             #                                 len(self.filter[self.filter>0.01]))
                                             
-            mean_flux_err = np.nansum(self.flux_err/self.nu*self.filter
-                                          )/np.nansum(self.filter)
+            # mean_flux_err = np.nansum(self.flux_err/self.nu*self.filter
+            #                               )/np.nansum(self.filter)
+            mean_flux_err = np.nanmean(self.flux_err/self.nu)
             integral_flux_err = mean_flux_err/np.sqrt(
-                len(self.filter[self.filter>0.01]))            
+                len(self.filter[self.filter>0.001]))                        
             rel_flux_err = np.abs(integral_flux_err/integral_flux)
-            
-            
-            mag_err = 2.5*rel_flux_err            
+                    
+            mag_err = 2.5/np.log(10) * rel_flux_err            
+            print(mag_err)
             return mag, mag_err
         
         else:
@@ -314,7 +315,7 @@ class magnitude(Filter):
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
     wavelength = np.linspace(7000, 21000, 5000) #AA
-    my_filter = Filter(wavelength=wavelength, filter_name='2MASS_J')
+    my_filter = Filter(wavelength=wavelength, filter_name='SDSS_u')
 
     plt.figure()        
     plt.plot(my_filter.wl_filter, my_filter.filter_resp, 'r')

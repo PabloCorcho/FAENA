@@ -154,7 +154,7 @@ if __name__=='__main__':
     
     newcmp = ListedColormap(newcolors, name='RedsBlues')
     
-    cube = CALIFACube(path='IC1528')
+    cube = CALIFACube(path='IC5376')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=True)            
     cube.get_bad_pixels()
@@ -166,7 +166,7 @@ if __name__=='__main__':
     
     
     ew = Compute_equivalent_width(cube)
-    ew.compute_ew()
+    ew.compute_ew(plot=True)
     
     
     # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
