@@ -73,8 +73,9 @@ class Cube(object):
         except:
             self.get_redshift()
         
-        self.wl = self.wl/(1+self.redshift)
-        self.rest_frame = True
+        if not self.rest_frame:
+            self.wl = self.wl/(1+self.redshift)
+            self.rest_frame = True
         print('Wavelength in rest frame')
      
     def voronoi_binning(self, ref_image, ref_noise, targetSN, plot_binning=False):
@@ -103,7 +104,7 @@ class Cube(object):
         
         self.nbins = np.unique(self.binNum).size
         
-        self.bin_surface = self.nPixels*self.fiber_surface # arcsec^2
+        self.bin_surface = self.nPixels*self.pixel_surface # arcsec^2
     
     def bin_cube(self):
         self.binned_flux = np.zeros((self.flux.shape[0], self.nbins))
@@ -125,13 +126,12 @@ class Cube(object):
 class CALIFACube(Cube):
     """
     This class reads CALIFA cubes
-    - mode: 'COMB', 'V500', 'V1200'
+    - mode: 'COMB' (only DR3), 'V500', 'V1200'
     - data_release: 'DR2', 'DR3'
     """
-    def __init__(self, path, mode='COMB', abs_path=False, data_release='DR3'):
-        
-        self.fiber_diameter = 2.7 #diameter of IFU fiber in arcsec
-        self.fiber_surface = np.pi*self.fiber_diameter**2
+    def __init__(self, path, mode='V500', abs_path=False, data_release='DR3'):
+                
+        self.pixel_surface = 1 #arcsec^2
         
         if abs_path:
             self.path_to_cube = path
@@ -146,10 +146,7 @@ class CALIFACube(Cube):
         self.califaid = self.cube[0].header['CALIFAID']    
                         
     def get_flux(self):
-        self.flux = self.cube[0].data*1e-16
-        # BAD SKY SUBSTRACTION
-        self.flux[self.flux<0] = 0
-        #
+        self.flux = self.cube[0].data*1e-16        
         self.flux_units = 'erg/s/cm2/AA'        
         self.flux_error = self.cube[1].data*1e-16
         
@@ -170,40 +167,50 @@ class CALIFACube(Cube):
     def get_bad_pixels(self):
         """BAD PIXELS: 1 == GOOD, 0 == BAD"""                
         self.bad_pix = np.array(self.cube[0].data, dtype=bool)
-        rel_err = self.flux_error/self.flux
-        self.bad_pix[rel_err>1e2] = False
-                
+        # Huge relative error
+        rel_err = self.flux_error/self.flux        
+        # self.bad_pix[rel_err>1e2] = False
+        # Negative fluxes
+        # self.bad_pix[self.flux<0] = False
+        
+        self.n_bad_pix = np.zeros_like(self.bad_pix, dtype=int)
+        self.n_bad_pix[~self.bad_pix] = 1
+        self.n_bad_pix = np.sum(self.n_bad_pix, axis=(0))
+        
     def get_redshift(self):
         recesion_vel = self.cube[0].header['MED_VEL']
         self.redshift = recesion_vel/3e5
                                 
     def mask_bad(self):
-        # self.flux[~self.bad_pix] = 0
-        self.flux_error[~self.bad_pix] = 1e-30
+        print('MASKING BAD PIXELS WITH "NAN"')
+        self.flux[~self.bad_pix] = np.nan
+        self.flux_error[~self.bad_pix] = np.nan
 
 if __name__=='__main__':        
     cube = CALIFACube(path='NGC0001')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=True)        
-     
+    cube.get_bad_pixels()
+    cube.mask_bad()
+    
     wl = cube.wl
     flux = cube.flux
     flux_error = cube.flux_error
+    bad_pixels = cube.bad_pix
+    # red_band = (wl>6540)&(wl<6580)
     
-    red_band = (wl>6540)&(wl<6580)
+    # ref_image = np.nanmean(flux[red_band, :, :], axis=0)
+    # ref_image[ref_image<=0] = np.nan
+    # # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
+    # ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
+    # ref_noise[ref_noise<=0] = np.nan
     
-    ref_image = np.nanmean(flux[red_band, :, :], axis=0)
-    ref_image[ref_image<=0] = np.nan
-    # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
-    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
-    ref_noise[ref_noise<=0] = np.nan
-    
-    very_low_sn = ref_image/ref_noise < 0.01
-    ref_image[very_low_sn] = np.nan
-    ref_noise[very_low_sn] = np.nan
+    # very_low_sn = ref_image/ref_noise < 0.01
+    # ref_image[very_low_sn] = np.nan
+    # ref_noise[very_low_sn] = np.nan
 
-    cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
-    cube.bin_cube()
+    # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
+    # cube.bin_cube()
     
-    plt.figure()
-    plt.imshow(cube.bin_map, cmap='flag', origin='lower')
+    # plt.figure()
+    # plt.imshow(cube.bin_map, cmap='flag', origin='lower')

@@ -34,15 +34,16 @@ class Filter(object):
             
             
         self.filter_resp, self.wl_filter = Filter.get_filt(filter_name)
-        self.filter = Filter.new_filter(self.wl_filter, 
-                                        self.filter_resp, 
-                                        self.wavelength)    
+        self.filter = np.interp(self.wavelength, self.wl_filter, self.filter_resp)
+        
+        # self.filter = Filter.new_filter(self.wl_filter, 
+        #                                 self.filter_resp, 
+        #                                 self.wavelength)    
     def get_filt(filter_name):
        
         # absolute_path = os.path.dirname(os.path.abspath('photometry.py'))
         # absolute_path = os.path.join(absolute_path, '..','Filters')
-        
-        
+                
         absolute_path = '/home/pablo/FAENA/measurements/Filters'        
         
 #        absolute_path = os.path.join(absolute_path, 'Filters')
@@ -90,8 +91,8 @@ class Filter(object):
             bad_filter = True
                                     
         
-        band_init_pos = np.where(fil>0.01)[0][0]
-        band_end_pos = np.where(fil[::]>0.01)[0][0]
+        band_init_pos = np.where(fil>0.001)[0][0]
+        band_end_pos = np.where(fil[::]>0.001)[0][0]
         
         wl_init_pos = wl[band_init_pos]
         wl_end_pos = wl[-band_end_pos]
@@ -195,41 +196,23 @@ class magnitude(Filter):
             
             
         self.absolute = absolute
-        # photometric_system = kwargs['photometric_system']
         
-        # if photometric_system=='AB': 
-        #     self.magnitude = magnitude.AB(self)
-        # if photometric_system=='Vega':
-        #     self.magnitude = magnitude.Vega(self)
-    
     def AB(self):   #photometric system  used with SDSS filters
         """ This function computes the magnitude in the AB system of a given spectrum. The spectrum units must be in erg/s for absolute
          magnitude computation or in erg/s/cm2 for apparent magnitude. """
  
-         ## Flux counts
-#        if self.absolute==True: 
-#            self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   # flux at 10 pc.
-#        
-#        
-#        diff_nu = - np.ediff1d(np.insert(self.nu, 0, 2*self.nu[0]-self.nu[1]))
-#        
-#        integral_flux = np.nansum((self.flux/self.nu * self.filter * diff_nu) )        
-#        
-#        integral_R = np.nansum(self.filter*diff_nu)
-#        
-#        mag =-2.5*np.log10(integral_flux/integral_R) - 48.60
-        
-        ## Photon counts
         if self.absolute==True: 
             self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   # flux at 10 pc.
         
         F_nu = self.flux/self.nu
         
         
-        integral_flux = np.trapz(F_nu*self.filter, np.log(self.nu))        
-        
+        integral_flux = np.trapz(F_nu*self.filter, np.log(self.nu))                
         integral_R = np.trapz(self.filter, np.log(self.nu))
         
+        # integral_flux = np.trapz(F_nu*self.filter, self.nu)                
+        # integral_R = np.trapz(self.filter, self.nu)
+                
         mag =-2.5*np.log10(integral_flux/integral_R) - 48.60
         
         if self.compute_err:
@@ -253,7 +236,7 @@ class magnitude(Filter):
             rel_flux_err = np.abs(integral_flux_err/integral_flux)
                     
             mag_err = 2.5/np.log(10) * rel_flux_err            
-            print(mag_err)
+            # print(mag_err)
             return mag, mag_err
         
         else:
@@ -264,19 +247,6 @@ class magnitude(Filter):
         The spectrum units must be in erg/s for absolute
          magnitude computation or in erg/s/cm2 for apparent magnitude. """
  
-         ## Flux counts
-#        if self.absolute==True: 
-#            self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   # flux at 10 pc.
-#        
-#        
-#        diff_nu = - np.ediff1d(np.insert(self.nu, 0, 2*self.nu[0]-self.nu[1]))
-#        
-#        integral_flux = np.nansum((self.flux/self.nu * self.filter * diff_nu) )        
-#        
-#        integral_R = np.nansum(self.filter*diff_nu)
-#        
-#        mag =-2.5*np.log10(integral_flux/integral_R) - 48.60
-        
         ## Photon counts
         # if self.absolute==True: 
         #     self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   # flux at 10 pc.
@@ -313,17 +283,60 @@ class magnitude(Filter):
     
         
 if __name__ == '__main__':
+    from astropy import units as u
+    from synphot import units as s_units
+    from synphot import SourceSpectrum
+    from synphot.models import BlackBodyNorm1D
+    import pyphot
     from matplotlib import pyplot as plt
-    wavelength = np.linspace(7000, 21000, 5000) #AA
-    my_filter = Filter(wavelength=wavelength, filter_name='SDSS_u')
-
-    plt.figure()        
-    plt.plot(my_filter.wl_filter, my_filter.filter_resp, 'r')
-    plt.plot(wavelength, my_filter.filter, 'k--')
-    plt.xlim(1.2e4, 1.3e4)
     
+    temps = np.logspace(3.2, 4, 50)
+    my_color = []
+    py_color = []
+    for temp_i in temps:
+        wavelength = np.linspace(3000, 7000, 5000) #AA
+        
+        bb = SourceSpectrum(BlackBodyNorm1D, temperature=temp_i)
+        bb_spectra = bb(wavelength, flux_unit=s_units.FLAM).value
+        
+        library=pyphot.get_library()
+        py_g = library['SDSS_g']
+        py_r = library['SDSS_r']
+        py_g_flux = py_g.get_flux(wavelength, bb_spectra).value
+        py_g_mag = -2.5 * np.log10(py_g_flux) - py_g.AB_zero_mag
+        py_r_flux = py_r.get_flux(wavelength, bb_spectra).value
+        py_r_mag = -2.5 * np.log10(py_r_flux) - py_r.AB_zero_mag
+        
+        # my_filter = Filter(wavelength=wavelength, filter_name='r')
+        
+        
+        # plt.figure()        
+        # plt.plot(py_filter.wavelength.value, py_filter.transmit, lw=3)
+        # plt.plot(my_filter.wl_filter, my_filter.filter_resp, 'r')
+        # plt.plot(wavelength, my_filter.filter, 'k--')
+        # # plt.xlim(1.2e4, 1.3e4)
+        
+        # plt.figure()
+        # plt.plot(wavelength, bb_spectra, 'k')
+        # plt.plot(wavelength, bb_spectra*my_filter.filter, 'r')
+        # plt.plot(wavelength, bb_spectra*np.interp(wavelength, py_filter.wavelength, 
+        #                                           py_filter.transmit), 'b--')
+        
+        my_g_mag = magnitude(wavelength=wavelength, flux=bb_spectra*wavelength, filter_name='g')
+        my_r_mag = magnitude(wavelength=wavelength, flux=bb_spectra*wavelength, filter_name='r')
+        
+        m_g_mag = my_g_mag.AB()
+        m_r_mag = my_r_mag.AB()
+        
+        print('PYPHOT g-mag:', py_g_mag, 'This g-mag:', m_g_mag, '\nDifference', py_g_mag-m_g_mag)
+        print('PYPHOT r-mag:', py_r_mag, 'This r-mag:', m_r_mag, '\nDifference', py_r_mag-m_r_mag)
+        print(py_g_mag-py_r_mag, m_g_mag-m_r_mag)
+        
+        my_color.append(m_g_mag-m_r_mag)
+        py_color.append(py_g_mag-py_r_mag)
     
-    
-    
-    
+    plt.figure()
+    plt.plot(temps, my_color, 'k')
+    plt.plot(temps, py_color, 'r--')
+    plt.grid(b=True)
     

@@ -44,17 +44,19 @@ class ComputePhotometry(object):
         for i_elem in range(flux.shape[1]):
             for j_elem in range(flux.shape[2]):
     
-                print('Computing region ({},{})'.format(i_elem, j_elem))
-                flux_ij = flux[:, i_elem, j_elem]                                            
-                flux_ij_err = flux_error[:, i_elem, j_elem]
-                
-                if flux_ij.sum() <= 0:
+                # print('Computing region ({},{})'.format(i_elem, j_elem))
+                good_pixels = ~np.isnan(flux[:, i_elem, j_elem]                                            )
+                wl = self.cube.wl[good_pixels]                
+                flux_ij = flux[good_pixels, i_elem, j_elem]                                            
+                flux_ij_err = flux_error[good_pixels, i_elem, j_elem]
+                print(flux_ij.size)
+                if (flux_ij.sum()<=0)|(flux_ij.size<good_pixels.size*0.5):
                     continue
                 
                 for element in range(len(self.bands)):
                     mag = photometry.magnitude(absolute=abs_phot, 
                                            filter_name=self.bands[element], 
-                                           wavelength=self.cube.wl, 
+                                           wavelength=wl, 
                                            flux=flux_ij,
                                            flux_err=flux_ij_err,
                                            photometric_system=self.system)
@@ -166,7 +168,10 @@ class ComputeBinnedPhotometry(object):
         
 
 if __name__=='__main__':        
-    cube = CALIFACube(path='NGC2487')
+    # UGC05108
+    #  UGC05359
+    #   NGC3106
+    cube = CALIFACube(path='UGC05359')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=True)            
     cube.get_bad_pixels()
@@ -214,19 +219,73 @@ if __name__=='__main__':
     
     photo.compute_photometry()
     
-    # photo.save_phot_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC0001.fits')
-    
     my_g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
     plt.figure()
-    plt.imshow(my_g_r, vmax=0, vmin=1, cmap='jet')
+    plt.imshow(my_g_r, vmax=0, vmin=1, cmap='jet', origin='lower')
     plt.colorbar()
         
     plt.figure()
-    plt.imshow(photo.photometry_map[1, :, :], vmin=17, vmax=24, cmap='nipy_spectral')
+    plt.imshow(photo.photometry_map[1, :, :], vmin=17, vmax=24, 
+               cmap='nipy_spectral', origin='lower')
     plt.colorbar()
     
     plt.figure()
-    plt.imshow(photo.photometry_map_err[1, :, :],   cmap='nipy_spectral',
-               vmax=0.1)
+    plt.imshow(photo.photometry_map_err[1, :, :], cmap='nipy_spectral',
+               origin='lower', vmax=.2)
     plt.colorbar()
     
+    
+    
+    hdul = fits.open('/home/pablo/obs_data/CALIFA/DR3/V500/Photometry/UGC05359.fits')
+    old_g_err = hdul[2].data
+    old_r_err = hdul[4].data
+
+    old_r = hdul[3].data
+    old_g = hdul[1].data
+    
+    plt.figure()
+    plt.hist(my_g_r[photo.photometry_map[0, :, :]<24],
+             bins=30, range=[0.1,1.2], histtype='step', color='k')
+    plt.hist(old_g[old_r<24]-old_r[old_r<24], bins=30, range=[0.,1.2], 
+             histtype='step', color='r')
+    
+    plt.figure()
+    plt.subplot(221)
+    plt.imshow(photo.photometry_map_err[0, :, :], cmap='nipy_spectral',
+               origin='lower', vmax=0.2)
+    plt.colorbar()
+    plt.contour(photo.photometry_map[0, :, :], levels=[23], colors='k')    
+    plt.subplot(222)
+    plt.imshow(old_g_err, cmap='nipy_spectral',
+               origin='lower', vmax=.2)
+    plt.colorbar()
+    plt.subplot(223)
+    plt.imshow(photo.photometry_map_err[1, :, :], cmap='nipy_spectral',
+               origin='lower', vmax=.2)
+    plt.colorbar()
+    plt.subplot(224)
+    plt.imshow(old_r_err, cmap='nipy_spectral',
+               origin='lower', vmax=.2)
+    plt.colorbar()
+    
+    plt.figure()
+    plt.subplot(221)
+    plt.imshow(photo.photometry_map[0, :, :], cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=17)
+    plt.colorbar()
+    plt.contour(photo.photometry_map[0, :, :], levels=[23], colors='k')    
+    plt.subplot(222)
+    plt.imshow(old_g, cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=17)    
+    plt.colorbar()
+    plt.contour(old_g, levels=[23], colors='k')    
+    plt.subplot(223)
+    plt.imshow(photo.photometry_map[1, :, :], cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=17)
+    plt.colorbar()
+    plt.contour(photo.photometry_map[1, :, :], levels=[23], colors='k')    
+    plt.subplot(224)
+    plt.imshow(old_r, cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=17)
+    plt.contour(old_r, levels=[23], colors='k')    
+    plt.colorbar()
