@@ -216,24 +216,13 @@ class magnitude(Filter):
         mag =-2.5*np.log10(integral_flux/integral_R) - 48.60
         
         if self.compute_err:
-            # print(self.flux_err[np.isnan(self.flux_err)])
-            # integral_flux_err = np.trapz((self.flux_err/self.nu*self.filter)**2, np.log(self.nu))        
-            # integral_flux_err = np.sqrt(integral_flux_err)
             
-            # integral_flux_err = np.sqrt(
-            #     np.nansum(
-            #         (self.flux_err[:-1]/self.nu[:-1]*self.filter[:-1]*np.diff(
-            #             np.log(self.nu)))**2
-            #               )
-            #                             )/np.sqrt(
-            #                                 len(self.filter[self.filter>0.01]))
-                                            
-            # mean_flux_err = np.nansum(self.flux_err/self.nu*self.filter
-            #                               )/np.nansum(self.filter)
-            mean_flux_err = np.nanmean(self.flux_err/self.nu)
-            integral_flux_err = mean_flux_err/np.sqrt(
+            mean_flux = np.nansum(F_nu*self.filter)/np.nansum(self.filter)            
+            mean_flux_err = np.nanmedian(self.flux_err/self.nu)
+            
+            mean_flux_err = mean_flux_err/np.sqrt(
                 len(self.filter[self.filter>0.001]))                        
-            rel_flux_err = np.abs(integral_flux_err/integral_flux)
+            rel_flux_err = np.abs(mean_flux_err/mean_flux)
                     
             mag_err = 2.5/np.log(10) * rel_flux_err            
             # print(mag_err)

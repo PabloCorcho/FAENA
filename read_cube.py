@@ -169,7 +169,7 @@ class CALIFACube(Cube):
         self.bad_pix = np.array(self.cube[0].data, dtype=bool)
         # Huge relative error
         rel_err = self.flux_error/self.flux        
-        # self.bad_pix[rel_err>1e2] = False
+        self.bad_pix[rel_err>1e2] = False
         # Negative fluxes
         # self.bad_pix[self.flux<0] = False
         

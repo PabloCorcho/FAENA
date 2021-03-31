@@ -49,7 +49,7 @@ class ComputePhotometry(object):
                 wl = self.cube.wl[good_pixels]                
                 flux_ij = flux[good_pixels, i_elem, j_elem]                                            
                 flux_ij_err = flux_error[good_pixels, i_elem, j_elem]
-                print(flux_ij.size)
+                
                 if (flux_ij.sum()<=0)|(flux_ij.size<good_pixels.size*0.5):
                     continue
                 
@@ -171,9 +171,11 @@ if __name__=='__main__':
     # UGC05108
     #  UGC05359
     #   NGC3106
+    from matplotlib.colors import LogNorm
+    
     cube = CALIFACube(path='UGC05359')
     cube.get_flux()        
-    cube.get_wavelength(to_rest_frame=True)            
+    cube.get_wavelength(to_rest_frame=False)            
     cube.get_bad_pixels()
     cube.mask_bad()
     
@@ -244,7 +246,7 @@ if __name__=='__main__':
     old_g = hdul[1].data
     
     plt.figure()
-    plt.hist(my_g_r[photo.photometry_map[0, :, :]<24],
+    plt.hist(my_g_r[photo.photometry_map[1, :, :]<24],
              bins=30, range=[0.1,1.2], histtype='step', color='k')
     plt.hist(old_g[old_r<24]-old_r[old_r<24], bins=30, range=[0.,1.2], 
              histtype='step', color='r')
@@ -252,20 +254,20 @@ if __name__=='__main__':
     plt.figure()
     plt.subplot(221)
     plt.imshow(photo.photometry_map_err[0, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=0.2)
+               origin='lower', norm=LogNorm())
     plt.colorbar()
     plt.contour(photo.photometry_map[0, :, :], levels=[23], colors='k')    
     plt.subplot(222)
     plt.imshow(old_g_err, cmap='nipy_spectral',
-               origin='lower', vmax=.2)
+               origin='lower', vmax=.02)
     plt.colorbar()
     plt.subplot(223)
     plt.imshow(photo.photometry_map_err[1, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=.2)
+               origin='lower', vmax=.02)
     plt.colorbar()
     plt.subplot(224)
     plt.imshow(old_r_err, cmap='nipy_spectral',
-               origin='lower', vmax=.2)
+               origin='lower', vmax=.02)
     plt.colorbar()
     
     plt.figure()
