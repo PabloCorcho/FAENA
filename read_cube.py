@@ -166,15 +166,15 @@ class CALIFACube(Cube):
         
     def get_bad_pixels(self):
         """BAD PIXELS: 1 == GOOD, 0 == BAD"""                
-        self.bad_pix = np.array(self.cube[0].data, dtype=bool)
+        self.bad_pix = np.array(self.cube[3].data, dtype=bool)
         # Huge relative error
         rel_err = self.flux_error/self.flux        
-        self.bad_pix[rel_err>1e2] = False
+        self.bad_pix[rel_err>1e2] = True
         # Negative fluxes
         # self.bad_pix[self.flux<0] = False
         
         self.n_bad_pix = np.zeros_like(self.bad_pix, dtype=int)
-        self.n_bad_pix[~self.bad_pix] = 1
+        self.n_bad_pix[self.bad_pix] = 1
         self.n_bad_pix = np.sum(self.n_bad_pix, axis=(0))
         
     def get_redshift(self):
@@ -183,8 +183,8 @@ class CALIFACube(Cube):
                                 
     def mask_bad(self):
         print('MASKING BAD PIXELS WITH "NAN"')
-        self.flux[~self.bad_pix] = np.nan
-        self.flux_error[~self.bad_pix] = np.nan
+        self.flux[self.bad_pix] = np.nan
+        self.flux_error[self.bad_pix] = np.nan
 
 if __name__=='__main__':        
     cube = CALIFACube(path='NGC0001')

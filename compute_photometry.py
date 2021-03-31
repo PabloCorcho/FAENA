@@ -16,7 +16,7 @@ from measurements import photometry
 
 import astropy.io.fits as fits
 
-                
+from scipy.ndimage import gaussian_filter1d
                 
 class ComputePhotometry(object):
     def __init__(self, cube, bands, system='AB'):
@@ -31,6 +31,9 @@ class ComputePhotometry(object):
         self.photometry_map[:] = np.nan
         self.photometry_map_err = np.zeros_like(self.photometry_map)
         self.photometry_map_err[:] = np.nan
+        self.photometry_flag_map = np.zeros((self.cube.flux.shape[1], 
+                                        self.cube.flux.shape[2]))
+        self.photometry_flag_map[:] = np.nan
         
     def compute_photometry(self, abs_phot=False):
         
@@ -50,9 +53,23 @@ class ComputePhotometry(object):
                 flux_ij = flux[good_pixels, i_elem, j_elem]                                            
                 flux_ij_err = flux_error[good_pixels, i_elem, j_elem]
                 
-                if (flux_ij.sum()<=0)|(flux_ij.size<good_pixels.size*0.5):
+                if np.isnan(flux_ij).all():
+                    self.photometry_flag_map[i_elem, j_elem] = 0
                     continue
-                
+                elif (flux_ij.size<good_pixels.size*0.7):
+                    print('interpolating bad spaxel', flux_ij.size)
+                    flux_ij = np.interp(self.cube.wl, 
+                                        wl, flux_ij)
+                    flux_ij_err = np.interp(self.cube.wl, 
+                                        wl, flux_ij_err)
+                    
+                    flux_ij = gaussian_filter1d(flux_ij, sigma=30)
+                    flux_ij_err = gaussian_filter1d(flux_ij_err, sigma=30)
+                    wl = self.cube.wl
+                    self.photometry_flag_map[i_elem, j_elem] = 2
+                else:
+                    self.photometry_flag_map[i_elem, j_elem] = 1
+                    
                 for element in range(len(self.bands)):
                     mag = photometry.magnitude(absolute=abs_phot, 
                                            filter_name=self.bands[element], 
@@ -63,6 +80,7 @@ class ComputePhotometry(object):
                     mag, mag_err = mag.AB()
                     self.photometry_map[element, i_elem, j_elem] = mag
                     self.photometry_map_err[element, i_elem, j_elem] = mag_err
+                
                 
     
         
@@ -125,9 +143,8 @@ class ComputeBinnedPhotometry(object):
                 flux_i = flux[:, i_elem]                                                            
                 flux_i_err = flux_error[:, i_elem]
                 
-                if flux_i.sum() <= 0:
-                    continue
-                
+                if np.isnan(flux_i).all():
+                    continue                
                 bad_px = np.isnan(flux_i)
                 mask = self.cube.bin_map == i_elem                
                 for element in range(len(self.bands)):
@@ -173,7 +190,7 @@ if __name__=='__main__':
     #   NGC3106
     from matplotlib.colors import LogNorm
     
-    cube = CALIFACube(path='UGC05359')
+    cube = CALIFACube(path='NGC0681')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=False)            
     cube.get_bad_pixels()
@@ -217,77 +234,95 @@ if __name__=='__main__':
     # plt.imshow(np.log10(photo.photometry_map_err[1, :, :]),   cmap='nipy_spectral')
     # plt.colorbar()
     
-    photo = ComputePhotometry(cube, bands=['g', 'r'])
+    photo = ComputePhotometry(cube, bands=['g', 'r', 'i'])
     
     photo.compute_photometry()
     
-    my_g_r = photo.photometry_map[0, :, :]-photo.photometry_map[1, :, :]
-    plt.figure()
-    plt.imshow(my_g_r, vmax=0, vmin=1, cmap='jet', origin='lower')
-    plt.colorbar()
-        
-    plt.figure()
-    plt.imshow(photo.photometry_map[1, :, :], vmin=17, vmax=24, 
-               cmap='nipy_spectral', origin='lower')
-    plt.colorbar()
-    
-    plt.figure()
-    plt.imshow(photo.photometry_map_err[1, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=.2)
-    plt.colorbar()
     
     
+    g = photo.photometry_map[0, :, :]
+    r = photo.photometry_map[1, :, :]
+    i = photo.photometry_map[2, :, :]
+    g_err = photo.photometry_map_err[0, :, :]
+    r_err = photo.photometry_map_err[1, :, :]
+    i_err = photo.photometry_map_err[2, :, :]
+    g_r = g-r
+    g_r_err = np.sqrt(g_err**2 + r_err**2)
     
-    hdul = fits.open('/home/pablo/obs_data/CALIFA/DR3/V500/Photometry/UGC05359.fits')
-    old_g_err = hdul[2].data
-    old_r_err = hdul[4].data
-
-    old_r = hdul[3].data
-    old_g = hdul[1].data
-    
-    plt.figure()
-    plt.hist(my_g_r[photo.photometry_map[1, :, :]<24],
-             bins=30, range=[0.1,1.2], histtype='step', color='k')
-    plt.hist(old_g[old_r<24]-old_r[old_r<24], bins=30, range=[0.,1.2], 
-             histtype='step', color='r')
+    r_limit = np.nanmean(np.sort(r.flatten())[:5])+4
+    mask_r = r<r_limit
     
     plt.figure()
     plt.subplot(221)
     plt.imshow(photo.photometry_map_err[0, :, :], cmap='nipy_spectral',
-               origin='lower', norm=LogNorm())
+               origin='lower', norm=LogNorm(vmax=.5))
     plt.colorbar()
-    plt.contour(photo.photometry_map[0, :, :], levels=[23], colors='k')    
-    plt.subplot(222)
-    plt.imshow(old_g_err, cmap='nipy_spectral',
-               origin='lower', vmax=.02)
-    plt.colorbar()
+    plt.contour(r, levels=[r_limit], colors='k')    
+    
     plt.subplot(223)
     plt.imshow(photo.photometry_map_err[1, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=.02)
-    plt.colorbar()
-    plt.subplot(224)
-    plt.imshow(old_r_err, cmap='nipy_spectral',
-               origin='lower', vmax=.02)
+               origin='lower', norm=LogNorm(vmax=.5))
     plt.colorbar()
     
     plt.figure()
     plt.subplot(221)
-    plt.imshow(photo.photometry_map[0, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=26, vmin=17)
+    plt.imshow(g, cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=16)
     plt.colorbar()
-    plt.contour(photo.photometry_map[0, :, :], levels=[23], colors='k')    
+    plt.contour(r, levels=[r_limit], colors='k')    
+    
     plt.subplot(222)
-    plt.imshow(old_g, cmap='nipy_spectral',
-               origin='lower', vmax=26, vmin=17)    
+    plt.imshow(r, cmap='nipy_spectral',
+               origin='lower', vmax=26, vmin=16)
     plt.colorbar()
-    plt.contour(old_g, levels=[23], colors='k')    
+    plt.contour(r, levels=[r_limit], colors='k')    
+    
     plt.subplot(223)
-    plt.imshow(photo.photometry_map[1, :, :], cmap='nipy_spectral',
-               origin='lower', vmax=26, vmin=17)
+    plt.imshow(g_r, cmap='nipy_spectral',
+               origin='lower', vmax=1.2, vmin=0.2)
     plt.colorbar()
-    plt.contour(photo.photometry_map[1, :, :], levels=[23], colors='k')    
-    plt.subplot(224)
-    plt.imshow(old_r, cmap='nipy_spectral',
-               origin='lower', vmax=26, vmin=17)
-    plt.contour(old_r, levels=[23], colors='k')    
+    plt.contour(r, levels=[r_limit], colors='k')    
+    
+    plt.figure()
+    plt.imshow(photo.photometry_flag_map, cmap='brg')
     plt.colorbar()
+    
+    
+    from astropy.visualization import make_lupton_rgb
+
+    blue_image = 10**(-0.4*(g+48.60))
+    # blue_image = 1/g
+    blue_image = (blue_image-np.nanmin(blue_image))/(np.nanmax(blue_image)-np.nanmin(blue_image))
+    
+    green_image = 10**(-0.4*(r+48.60))
+    # green_image = 1/r
+    green_image = (green_image-np.nanmin(green_image))/(np.nanmax(green_image)-np.nanmin(green_image))
+    
+    red_image = 10**(-0.4*(i+48.60))
+    # red_image = 1/i
+    red_image = (red_image-np.nanmin(red_image))/(np.nanmax(red_image)-np.nanmin(red_image))
+    
+    # corr = 1
+    # if np.nanmax([blue_image, green_image, red_image]) > 250:
+    #     corr = np.nanmax([blue_image, green_image, red_image])/256
+    
+    rgb_mask = np.isnan(blue_image)|np.isnan(green_image)|np.isnan(red_image)
+    
+    blue_image[rgb_mask] = 0
+    # blue_image = np.array(blue_image/corr, dtype="uint8")
+    green_image[rgb_mask] = 0
+    # green_image = np.array(green_image/corr, dtype="uint8")    
+    red_image[rgb_mask] = 0
+    # red_image = np.array(red_image/corr, dtype="uint8")
+    
+    image = make_lupton_rgb(red_image, green_image, 
+                            blue_image, Q=10, stretch=.02, minimum=0)
+    
+    plt.figure()
+    plt.imshow(image, origin='lower')        
+    
+    plt.figure()
+    plt.scatter(r.flatten(), g_r_err.flatten(), s=1)
+    # plt.ylim(0, .2)
+    plt.xlim(18,25)
+    plt.yscale('log')
