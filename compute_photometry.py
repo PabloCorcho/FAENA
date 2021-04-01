@@ -57,7 +57,7 @@ class ComputePhotometry(object):
                     self.photometry_flag_map[i_elem, j_elem] = 0
                     continue
                 elif (flux_ij.size<good_pixels.size*0.7):
-                    print('interpolating bad spaxel', flux_ij.size)
+                    # print('interpolating bad spaxel', flux_ij.size)
                     flux_ij = np.interp(self.cube.wl, 
                                         wl, flux_ij)
                     flux_ij_err = np.interp(self.cube.wl, 
