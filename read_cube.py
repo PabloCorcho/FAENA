@@ -162,14 +162,14 @@ class CALIFACube(Cube):
         if to_rest_frame:
             self.to_rest_frame()
         else:
-            print('Not in rest frame')                               
+            print('Wavelength vector is not in rest frame')                               
         
     def get_bad_pixels(self):
         """BAD PIXELS: 1 == GOOD, 0 == BAD"""                
         self.bad_pix = np.array(self.cube[3].data, dtype=bool)
         # Huge relative error
-        rel_err = self.flux_error/self.flux        
-        self.bad_pix[rel_err>1e2] = True
+        # rel_err = self.flux_error/self.flux        
+        # self.bad_pix[rel_err>1e2] = True
         # Negative fluxes
         # self.bad_pix[self.flux<0] = False
         
@@ -197,13 +197,13 @@ if __name__=='__main__':
     flux = cube.flux
     flux_error = cube.flux_error
     bad_pixels = cube.bad_pix
-    # red_band = (wl>6540)&(wl<6580)
+    red_band = (wl>6540)&(wl<6580)
     
-    # ref_image = np.nanmean(flux[red_band, :, :], axis=0)
-    # ref_image[ref_image<=0] = np.nan
-    # # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
-    # ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
-    # ref_noise[ref_noise<=0] = np.nan
+    ref_image = np.nanmean(flux[red_band, :, :], axis=0)
+    ref_image[ref_image<=0] = np.nan
+    # noise_i = np.sqrt(np.nansum(error[red_band, :, :]**2, axis=0))
+    ref_noise = np.nanmean(flux_error[red_band, :, :], axis=0)
+    ref_noise[ref_noise<=0] = np.nan
     
     # very_low_sn = ref_image/ref_noise < 0.01
     # ref_image[very_low_sn] = np.nan

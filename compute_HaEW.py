@@ -11,7 +11,8 @@ from matplotlib import pyplot as plt
 from read_cube import CALIFACube
 import astropy.io.fits as fits
 from measurements.compute_ha_ew import  Compute_HaEW
-                
+from scipy.ndimage import gaussian_filter1d
+                                
                 
 class Compute_equivalent_width(object):
     def __init__(self, cube):
@@ -27,24 +28,38 @@ class Compute_equivalent_width(object):
         self.ew_map[:] = np.nan
         self.ew_map_err = np.zeros_like(self.ew_map)
         self.ew_map_err[:] = np.nan
-        
+        self.ew_flag_map = np.zeros((self.cube.flux.shape[1], 
+                                        self.cube.flux.shape[2]))
+        self.ew_flag_map[:] = np.nan
     def compute_ew(self, plot=False):
+        flux = self.cube.flux
+        flux_error = self.cube.flux_error
         
         for i_elem in range(self.cube.flux.shape[1]):
             for j_elem in range(self.cube.flux.shape[2]):
         # for i_elem in [18]:
-        #     for j_elem in [60]:
-    
-                # print('Computing region ({},{})'.format(i_elem, j_elem))
-                flux_ij = self.cube.flux[:, i_elem, j_elem]                                            
-                flux_ij_err = self.cube.flux_error[:, i_elem, j_elem]
+        #     for j_elem in [60]:                
+                good_pixels = ~np.isnan(flux[:, i_elem, j_elem]                                            )
+                wl = self.cube.wl[good_pixels]                
+                flux_ij = flux[good_pixels, i_elem, j_elem]                                            
+                flux_ij_err = flux_error[good_pixels, i_elem, j_elem]
                 
-                if flux_ij.sum() <= 0:
+                if np.isnan(flux_ij).all()|(np.nansum(flux_ij)<0):
+                    self.ew_flag_map[i_elem, j_elem] = 0
                     continue
-                
+                elif (flux_ij.size<good_pixels.size*0.7):                
+                    flux_ij = np.interp(self.cube.wl, 
+                                        wl, flux_ij)
+                    flux_ij_err = np.interp(self.cube.wl, 
+                                        wl, flux_ij_err)                                        
+                    wl = self.cube.wl
+                    self.ew_flag_map[i_elem, j_elem] = 2
+                else:
+                    self.ew_flag_map[i_elem, j_elem] = 1
+                    
                 equivalent_width = Compute_HaEW(
                                                 flux_ij,
-                                                self.cube.wl, 
+                                                wl, 
                                                 flux_ij_err
                                                 )
                 EW, EW_err = equivalent_width.EW, equivalent_width.EW_err
@@ -142,84 +157,40 @@ class Compute_binned_equivalent_width(object):
 
 if __name__=='__main__': 
         
-    from matplotlib import cm
-    from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-    
-    blues = cm.get_cmap('winter_r', 100)
-    reds = cm.get_cmap('autumn', 100)
 
-
-    newcolors = np.vstack((reds(np.linspace(0, 1, 5)),
-                           blues(np.linspace(0, 1, 30))))
-    
-    newcmp = ListedColormap(newcolors, name='RedsBlues')
-    
-    cube = CALIFACube(path='IC5376')
+    cube = CALIFACube(path='NGC3990', mode='V500')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=True)            
     cube.get_bad_pixels()
-    cube.mask_bad()
-    
+
     wl = cube.wl
     flux = cube.flux
     flux_error = cube.flux_error
     
+    cube.mask_bad()
+    
+    flux_masked = cube.flux
+    flux_error_masked = cube.flux_error
+    
+    
+    sn = flux/flux_error
+    
+    ha_band = np.where((wl >6550.)&(wl<6575.))[0]
+    ha_sn = np.nansum(sn[ha_band, :, :], axis=0)
+    
+    plt.figure()
+    plt.imshow(cube.n_bad_pix)
+    plt.colorbar()
     
     ew = Compute_equivalent_width(cube)
-    ew.compute_ew(plot=True)
+    ew.compute_ew(plot=False)
+    
+    plt.figure()
+    plt.imshow(-ew.ew_map_err, vmax=20, vmin=-5, cmap='jet_r', origin='lower')
+    plt.colorbar()
+    
+    plt.figure()
+    plt.imshow(ew.ew_map_err, vmin=0, cmap='jet_r', origin='lower')
+    plt.colorbar()
     
     
-    # cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
-    # cube.bin_cube()
-    
-    # photo = Compute_binned_equivalent_width(cube)        
-    # photo.compute_ew()
-    
-    # plt.figure()
-    # plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
-    # plt.colorbar()
-    # plt.figure()
-    # plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
-    #            cmap='rainbow')
-    # plt.colorbar(label=r'$\sigma(EW)/EW$')  
-    
-    # # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
-    
-    # photo = Compute_equivalent_width(cube)        
-    # photo.compute_ew()
-    
-    # plt.figure()
-    # plt.imshow(-photo.ew_map, vmax=30, vmin=-5, cmap=newcmp, origin='lower')
-    # plt.colorbar()
-    # plt.figure()
-    # plt.imshow(np.log10(photo.ew_map_err/np.abs(photo.ew_map)), origin='lower',
-    #            cmap='rainbow')
-    # plt.colorbar(label=r'$\sigma(EW)/EW$')  
-    
-    # # photo.save_fits('/home/pablo/obs_data/CALIFA/DR3/COMB/Photometry/NGC6004.fits')
-    
-    # # import pyphot
-    # # from pyphot import unit
-    # # lib = pyphot.get_library()
-
-    # # sdss_r = lib['SDSS_r']
-    # # sdss_g = lib['SDSS_g']
-    # # g_r = np.zeros((cube.flux.shape[1],cube.flux.shape[2]))
-    
-    # # for ith in range(cube.flux.shape[1]):
-    # #     for jth in range(cube.flux.shape[2]):
-    # #         print(ith, jth)
-    # #         spectra = cube.flux[:, ith, jth]
-            
-            
-    # #         r_flux = sdss_r.get_flux(cube.wl, spectra)
-    # #         g_flux = sdss_g.get_flux(cube.wl, spectra)
-
-    # #         r_mag = -2.5 * np.log10(r_flux.value) - sdss_r.AB_zero_mag
-    # #         g_mag = -2.5 * np.log10(g_flux.value) - sdss_g.AB_zero_mag
-            
-    # #         g_r[ith, jth] = g_mag - r_mag
-    
-    
-    # # plt.imshow(my_g_r, vmin=0., vmax=1, cmap='jet')
-    # # plt.colorbar()
