@@ -31,6 +31,7 @@ class ComputePhotometry(object):
         self.photometry_map[:] = np.nan
         self.photometry_map_err = np.zeros_like(self.photometry_map)
         self.photometry_map_err[:] = np.nan
+        
         self.photometry_flag_map = np.zeros((self.cube.flux.shape[1], 
                                         self.cube.flux.shape[2]))
         self.photometry_flag_map[:] = np.nan
@@ -46,8 +47,7 @@ class ComputePhotometry(object):
             
         for i_elem in range(flux.shape[1]):
             for j_elem in range(flux.shape[2]):
-    
-                # print('Computing region ({},{})'.format(i_elem, j_elem))
+                    
                 good_pixels = ~np.isnan(flux[:, i_elem, j_elem]                                            )
                 wl = self.cube.wl[good_pixels]                
                 flux_ij = flux[good_pixels, i_elem, j_elem]                                            
@@ -56,8 +56,7 @@ class ComputePhotometry(object):
                 if np.isnan(flux_ij).all():
                     self.photometry_flag_map[i_elem, j_elem] = 0
                     continue
-                elif (flux_ij.size<good_pixels.size*0.7):
-                    # print('interpolating bad spaxel', flux_ij.size)
+                elif (flux_ij.size<good_pixels.size*0.7):                
                     flux_ij = np.interp(self.cube.wl, 
                                         wl, flux_ij)
                     flux_ij_err = np.interp(self.cube.wl, 
@@ -140,27 +139,41 @@ class ComputeBinnedPhotometry(object):
             flux_error = flux_error/self.cube.bin_surface[np.newaxis, :]
         
         for i_elem in range(self.cube.nbins):                        
-                flux_i = flux[:, i_elem]                                                            
-                flux_i_err = flux_error[:, i_elem]
+            good_pixels = ~np.isnan(flux[:, i_elem])    
+            flux_i = flux[good_pixels, i_elem]                                            
+            flux_i_err = flux_error[good_pixels, i_elem]        
+            wl = self.cube.wl[good_pixels]                
+                           
+            if np.isnan(flux_i).all():                
+                continue
+            elif (flux_i.size<good_pixels.size*0.7):
+                print('interpolating bad spaxel', flux_i.size)
+                flux_i = np.interp(self.cube.wl, 
+                                    wl, flux_i)
+                flux_i_err = np.interp(self.cube.wl, 
+                                    wl, flux_i_err)
                 
-                if np.isnan(flux_i).all():
-                    continue                
-                bad_px = np.isnan(flux_i)
-                mask = self.cube.bin_map == i_elem                
-                for element in range(len(self.bands)):
-                    mag = photometry.magnitude(absolute=abs_phot, 
-                                           filter_name=self.bands[element], 
-                                           wavelength=self.cube.wl[~bad_px], 
-                                           flux=flux_i[~bad_px],
-                                           flux_err=flux_i_err[~bad_px],
-                                           photometric_system=self.system)
-                    mag, mag_err = mag.AB()
-                    self.photometry_list[element, i_elem] = mag
-                    self.photometry_list_err[element, i_elem] = mag_err
-                    
-                    self.photometry_map[element, mask] = mag
-                    self.photometry_map_err[element, mask] = mag_err                    
-        
+                flux_i = gaussian_filter1d(flux_i, sigma=30)
+                flux_i_err = gaussian_filter1d(flux_i_err, sigma=30)
+                wl = self.cube.wl            
+            else:
+                pass
+            
+            mask = self.cube.bin_map == i_elem                
+            for element in range(len(self.bands)):
+                mag = photometry.magnitude(absolute=abs_phot, 
+                                       filter_name=self.bands[element], 
+                                       wavelength=wl, 
+                                       flux=flux_i,
+                                       flux_err=flux_i_err,
+                                       photometric_system=self.system)
+                mag, mag_err = mag.AB()
+                self.photometry_list[element, i_elem] = mag
+                self.photometry_list_err[element, i_elem] = mag_err
+                
+                self.photometry_map[element, mask] = mag
+                self.photometry_map_err[element, mask] = mag_err                    
+    
     def save_phot_fits(self, path):
         hdr = fits.Header()
         image_list = []        

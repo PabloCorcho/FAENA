@@ -110,64 +110,68 @@ class Compute_HaEW(object):
             
     def plot_ew(self):
         from matplotlib import pyplot as plt
+         
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.axvline(self.blue_band[-1], color='b')
-        ax.axvline(self.red_band[0], color='orange')        
-        ax.axvline(self.central[0], color='lime')
-        ax.axvline(self.central[-1], color='lime')
-        
-        ax.plot(self.wl, self.spectra, '.-', color='k')
-        ###
-        central_band = np.linspace(self.central[0],self.central[1], 100)
-        line_flux = -self.EW*self.pseudocont(6563)        
-        line_sigma = 2.5
-        line_profile = np.exp(-(central_band-6563)**2/2/line_sigma**2
-                              ) * 1/np.sqrt(2*np.pi)/line_sigma
-        
-        ax.plot(central_band, 
-                self.pseudocont(central_band)+line_flux*line_profile,
-                '--', color='k')
-        
-        line_flux_low = -(self.EW+self.EW_err)*self.pseudocont(6563)        
-        line_flux_high = -(self.EW-self.EW_err)*self.pseudocont(6563)        
-        
-        ax.fill_between(central_band, 
-                    self.pseudocont(central_band)+line_flux_low*line_profile,
-                    self.pseudocont(central_band)+line_flux_high*line_profile,
-                    alpha=0.5, color='blue')
-        
-        # ax.plot(central_band, 
-        #         self.pseudocont(central_band)+line_flux*line_profile,
-        #         ':', color='k')
-        
-        # line_flux = -(self.EW-self.EW_err)*self.pseudocont(6563)        
-        # ax.plot(central_band, 
-        #         self.pseudocont(central_band)+line_flux*line_profile,
-        #         '--', color='k')               
-        ###
-        ax.fill_between(self.wl, self.spectra-self.errors,
-                                 self.spectra+self.errors,
-                                 color='k', alpha=0.3)
-        ax.plot(self.wl, self.pseudocont(self.wl), 'r-')
-        ax.fill_between(self.wl, self.pseudocont(self.wl)-self.pseudocont_err(self.wl),
-                                 self.pseudocont(self.wl)+self.pseudocont_err(self.wl),
-                                 color='r', alpha=0.3)
-        ax.annotate(r'$EW={:.3} \pm {:.3}$'.format(self.EW, self.EW_err), xy=(.1,.9),
-                    xycoords='axes fraction', ha='left')
-        ax.annotate(r'$\langle S/N \rangle \sim{}$'.format(int(self.mean_signal_to_noise)),
-                    xy=(.1,.85),
-                    xycoords='axes fraction', ha='left')
-        ax.set_xlim(self.blue_band[0], self.red_band[-1])
-        ax.set_ylim(np.nanmin(
-            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*0.90), 
-                    np.nanmax(
-            self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*1.1)
-                    )
-        ax.set_yscale('log')
-        
-        return fig
-        
+        ax = fig.add_subplot(111)        
+        if np.isnan(self.EW):
+            return fig
+        else:
+            ax.axvline(self.blue_band[-1], color='b')
+            ax.axvline(self.red_band[0], color='orange')        
+            ax.axvline(self.central[0], color='lime')
+            ax.axvline(self.central[-1], color='lime')
+            
+            ax.plot(self.wl, self.spectra, '.-', color='k')
+            ###
+            central_band = np.linspace(self.central[0],self.central[1], 100)
+            line_flux = -self.EW*self.pseudocont(6563)        
+            line_sigma = 2.5
+            line_profile = np.exp(-(central_band-6563)**2/2/line_sigma**2
+                                  ) * 1/np.sqrt(2*np.pi)/line_sigma
+            
+            ax.plot(central_band, 
+                    self.pseudocont(central_band)+line_flux*line_profile,
+                    '--', color='k')
+            
+            line_flux_low = -(self.EW+self.EW_err)*self.pseudocont(6563)        
+            line_flux_high = -(self.EW-self.EW_err)*self.pseudocont(6563)        
+            
+            ax.fill_between(central_band, 
+                        self.pseudocont(central_band)+line_flux_low*line_profile,
+                        self.pseudocont(central_band)+line_flux_high*line_profile,
+                        alpha=0.5, color='blue')
+            
+            # ax.plot(central_band, 
+            #         self.pseudocont(central_band)+line_flux*line_profile,
+            #         ':', color='k')
+            
+            # line_flux = -(self.EW-self.EW_err)*self.pseudocont(6563)        
+            # ax.plot(central_band, 
+            #         self.pseudocont(central_band)+line_flux*line_profile,
+            #         '--', color='k')               
+            ###
+            ax.fill_between(self.wl, self.spectra-self.errors,
+                                     self.spectra+self.errors,
+                                     color='k', alpha=0.3)
+            ax.plot(self.wl, self.pseudocont(self.wl), 'r-')
+            ax.fill_between(self.wl, self.pseudocont(self.wl)-self.pseudocont_err(self.wl),
+                                     self.pseudocont(self.wl)+self.pseudocont_err(self.wl),
+                                     color='r', alpha=0.3)
+            ax.annotate(r'$EW={:.3} \pm {:.3}$'.format(self.EW, self.EW_err), xy=(.1,.9),
+                        xycoords='axes fraction', ha='left')
+            ax.annotate(r'$\langle S/N \rangle \sim{}$'.format(int(self.mean_signal_to_noise)),
+                        xy=(.1,.85),
+                        xycoords='axes fraction', ha='left')
+            ax.set_xlim(self.blue_band[0], self.red_band[-1])
+            ax.set_ylim(np.nanmin(
+                self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*0.90), 
+                        np.nanmax(
+                self.spectra[(self.wl>=self.blue_band[0])&(self.wl<=self.red_band[-1])]*1.1)
+                        )
+            ax.set_yscale('log')
+            
+            return fig
+            
         
 
 class Compute_Haflux(object):
