@@ -33,21 +33,12 @@ ew_bin_edges = np.hstack((np.arange(-5.6, 1, 0.2), np.logspace(0, 2.3, 30)))
 color_bins = (color_bin_edges[:-1]+color_bin_edges[1:])/2
 ew_bins = (ew_bin_edges[1:]+ew_bin_edges[:-1])/2
 
-# paths = glob('/media/pablo/Elements/CALIFA/DR3/V500/cubes/*.fits.gz')
-# output_folder = '/media/pablo/Elements/CALIFA/DR3/V500/'
-paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
-output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/binned/'
+paths = glob('/media/pablo/Elements/CALIFA/DR3/V500/cubes/*.fits.gz')
+output_folder = '/media/pablo/Elements/CALIFA/DR3/V500/binned/sn30/'
+#paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
+#output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/binned/'
 
-corr=3.0
-contour_file='/home/pablo/ageing-resolved/make_plots/data/fp_g_r_0.9_contour.fits'
-fp_data=fits.open(contour_file)
-fp=fp_data[0].data
-bingr=fp_data[1].data
-binew=fp_data[2].data
-binew = 10**binew - corr
-level90=fp_data[0].header['LEVELS']
-levels=[level90]
-    
+   
 
 for i in range(len(paths)):    
     path_i = paths[i]
@@ -81,7 +72,7 @@ for i in range(len(paths)):
     ref_noise[very_low_sn] = np.nan
 
     try:
-        cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=50)
+        cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=30)
         cube.bin_cube()
     except:
         continue
@@ -182,7 +173,4 @@ for i in range(len(paths)):
     # plt.ylim(-4, 200)
     # plt.savefig('tests/binning/'+name_i+'_ageing_diagrama.png')
     
-    break
-    
-        
-    
+   
