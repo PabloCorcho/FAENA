@@ -19,7 +19,7 @@ from compute_lick_indices import ComputeBinnedLick
 from astropy.io import fits
 
 import timeit
-
+import os
 color_bin_edges=np.linspace(0, 1.25, 20)
 ew_bin_edges = np.linspace(-5, 100, 50)
 ew_bin_edges = np.hstack((np.arange(-5.6, 1, 0.2), np.logspace(0, 2.3, 30)))
@@ -27,10 +27,21 @@ ew_bin_edges = np.hstack((np.arange(-5.6, 1, 0.2), np.logspace(0, 2.3, 30)))
 color_bins = (color_bin_edges[:-1]+color_bin_edges[1:])/2
 ew_bins = (ew_bin_edges[1:]+ew_bin_edges[:-1])/2
 
-# paths = glob('/media/pablo/Elements/CALIFA/DR3/V500/cubes/*.fits.gz')
-# output_folder = '/media/pablo/Elements/CALIFA/DR3/V500/binned/sn30/'
-paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
-output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/binned/'
+target_signal_to_noise = 50
+paths = glob('/media/pablo/Elements/CALIFA/DR3/V500/cubes/*.fits.gz')
+output_folder = '/media/pablo/Elements/CALIFA/DR3/V500/binned/sn'+str(target_signal_to_noise)
+
+if not os.path.isdir(output_folder):
+    os.mkdir(output_folder)
+    os.mkdir(output_folder+'/EW')
+    os.mkdir(output_folder+'/Lick')
+    os.mkdir(output_folder+'/Photometry')
+    print('New directories created at ', output_folder)
+        
+output_folder+='/'
+    
+#paths = glob('/home/pablo/obs_data/CALIFA/DR3/V500/cubes/*.fits.gz')
+#output_folder = '/home/pablo/obs_data/CALIFA/DR3/V500/binned/'
 
    
 
@@ -66,7 +77,8 @@ for i in range(len(paths)):
     ref_noise[very_low_sn] = np.nan
 
     try:
-        cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, targetSN=30)
+        cube.voronoi_binning(ref_image=ref_image, ref_noise=ref_noise, 
+                             targetSN=target_signal_to_noise)
         cube.bin_cube()
     except:
         continue
@@ -92,7 +104,8 @@ for i in range(len(paths)):
     class_binned_ew.save_fits(output_folder+'EW/'+name_i+'.fits')
     class_binned_photometry.save_phot_fits(output_folder+'Photometry/'+name_i+'.fits')
     class_binned_lick.save_phot_fits(output_folder+'Lick/'+name_i+'.fits')
-            
+                
+    del class_binned_ew, class_binned_lick, class_binned_photometry
     stop = timeit.default_timer()
     print('Time: {:.3} secs'.format(stop - start))          
     
