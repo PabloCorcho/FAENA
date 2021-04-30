@@ -274,6 +274,7 @@ class MANGACube(Cube):
         else:
             print('Wavelength vector is not in rest frame')
 
+
     def get_bad_pixels(self):
         """BAD PIXELS: 0 == GOOD, 1027 == BAD"""
         self.bad_pix = np.array(self.cube[3].data, dtype=bool)
