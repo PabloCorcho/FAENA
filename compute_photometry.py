@@ -203,7 +203,7 @@ if __name__=='__main__':
     #   NGC3106
     from matplotlib.colors import LogNorm
     
-    cube = CALIFACube(path='NGC0681')
+    cube = CALIFACube(path='NGC3381')
     cube.get_flux()        
     cube.get_wavelength(to_rest_frame=False)            
     cube.get_bad_pixels()
@@ -301,41 +301,4 @@ if __name__=='__main__':
     plt.colorbar()
     
     
-    from astropy.visualization import make_lupton_rgb
-
-    blue_image = 10**(-0.4*(g+48.60))
-    # blue_image = 1/g
-    blue_image = (blue_image-np.nanmin(blue_image))/(np.nanmax(blue_image)-np.nanmin(blue_image))
     
-    green_image = 10**(-0.4*(r+48.60))
-    # green_image = 1/r
-    green_image = (green_image-np.nanmin(green_image))/(np.nanmax(green_image)-np.nanmin(green_image))
-    
-    red_image = 10**(-0.4*(i+48.60))
-    # red_image = 1/i
-    red_image = (red_image-np.nanmin(red_image))/(np.nanmax(red_image)-np.nanmin(red_image))
-    
-    # corr = 1
-    # if np.nanmax([blue_image, green_image, red_image]) > 250:
-    #     corr = np.nanmax([blue_image, green_image, red_image])/256
-    
-    rgb_mask = np.isnan(blue_image)|np.isnan(green_image)|np.isnan(red_image)
-    
-    blue_image[rgb_mask] = 0
-    # blue_image = np.array(blue_image/corr, dtype="uint8")
-    green_image[rgb_mask] = 0
-    # green_image = np.array(green_image/corr, dtype="uint8")    
-    red_image[rgb_mask] = 0
-    # red_image = np.array(red_image/corr, dtype="uint8")
-    
-    image = make_lupton_rgb(red_image, green_image, 
-                            blue_image, Q=10, stretch=.02, minimum=0)
-    
-    plt.figure()
-    plt.imshow(image, origin='lower')        
-    
-    plt.figure()
-    plt.scatter(r.flatten(), g_r_err.flatten(), s=1)
-    # plt.ylim(0, .2)
-    plt.xlim(18,25)
-    plt.yscale('log')
