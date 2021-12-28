@@ -10,10 +10,33 @@ import numpy as np
 
 import os
 import units
-#import scipy as sp
 from scipy import interpolate
 
 
+# USING PYPHOT
+
+def AB_mags(wl, spec, filter):
+    T = filter.reinterp(wl)
+    nu = 3e18/wl  # [c] = [AA/s]
+    if len(spec.shape) > 1:
+        f_nu = spec * (wl / nu)[:, np.newaxis]
+        int_f_nu = np.trapz(f_nu * T.transmit[:, np.newaxis], np.log(wl),
+                            axis=0)
+        norm = np.trapz(T.transmit, np.log(wl))
+        sq_pivot_wl = np.trapz(T.transmit * wl, wl) / np.trapz(T.transmit,
+                                                               np.log(wl))
+        int_f_lambda = int_f_nu / norm * 3e18 / sq_pivot_wl
+        AB = -2.5 * np.log10(int_f_nu / norm) - 48.60
+    else:
+        f_nu = spec * (wl / nu)
+        int_f_nu = np.trapz(f_nu * T.transmit, np.log(wl),
+                            axis=0)
+        norm = np.trapz(T.transmit, np.log(wl))
+        sq_pivot_wl = np.trapz(T.transmit * wl, wl) / np.trapz(T.transmit,
+                                                               np.log(wl))
+        int_f_lambda = int_f_nu / norm * 3e18 / sq_pivot_wl
+        AB = -2.5 * np.log10(int_f_nu / norm) - 48.60
+    return int_f_lambda, AB
 
 # =============================================================================
 class Filter(object):

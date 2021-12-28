@@ -6,16 +6,37 @@ Created on Fri Oct 15 17:08:29 2021
 @author: pablo
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 11 12:35:06 2021
-
-@author: pablo
-"""
-
 import numpy as np
 import os
+from astropy.modeling import models, fitting
+
+fitter = fitting.LevMarLSQFitter()
+
+
+def fit_line(wl, spec, line_wl):
+    init_mu = line_wl
+    init_a = np.interp(np.array(init_mu), wl, spec)
+    init_sigma = init_mu * 100/3e5
+    max_sigma = init_mu * 300/3e5
+    model_init = models.Gaussian1D(init_a, init_mu, init_sigma)
+    model_init.mean.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+    model_init.stddev.bounds = [0, max_sigma]
+    fit = fitter(model_init, wl, spec)
+    return fit
+
+
+def line_flux(wl, spec, line_wl, wl_lims=None):
+    if wl_lims is not None:
+        pts = np.where((wl >= wl_lims[0]) & (wl <= wl_lims[1]))[0]
+    else:
+        delta_lambda = line_wl * 300/3e5
+        pts = np.where((wl >= line_wl - delta_lambda) &
+                       (wl <= line_wl + delta_lambda))[0]
+    if len(spec.shape) > 1:
+        flux = np.trapz(spec[pts, :], wl[pts], axis=0)
+    else:
+        flux = np.trapz(spec[pts], wl[pts])
+    return flux
 
 realpath = os.path.abspath(__file__)
 lim = realpath.find('emission_lines.py')
