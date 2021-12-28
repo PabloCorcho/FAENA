@@ -17,12 +17,13 @@ import extinction
 from measurements.equivalent_width import compute_all_ew
 from measurements.photometry import AB_mags
 import os
+from tqdm import tqdm
 
 lib = pyphot.get_library()
 filters = [lib[filter_i] for filter_i in ['SDSS_g', 'SDSS_r']]
 
 cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz' # endurance
-cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz' # roach
+# cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz' # roach
 cubes = glob(cubes_path)
 
 results_dir = 'MANGA-results/'
@@ -30,8 +31,8 @@ results_dir = 'MANGA-results/'
 all_ew = []
 all_gr = []
 all_d4000 = []
-for i, cube_path in enumerate(cubes):
-    print(i+1)
+for i in tqdm(range(len(cubes))):
+    cube_path = cubes[i]
     manga = MANGACube(path=cube_path, abs_path=True)
     galaxy_id = manga.plate + '-' + manga.ifudesign
     manga.get_flux()
@@ -59,7 +60,7 @@ for i, cube_path in enumerate(cubes):
     ax = fig.add_subplot(212)
     ax.semilogy(manga.wl, integrated_flux / integrated_flux_err, lw=1, c='k')
     ax.grid(b=True)
-    ax.set_ylim(1, 100)
+    ax.set_ylim(1, 1000)
     ax.set_ylabel(r'$F/\sigma$')
     ax = fig.add_subplot(211)
     ax.semilogy(manga.wl, integrated_flux, lw=1, c='k')
@@ -77,8 +78,9 @@ for i, cube_path in enumerate(cubes):
 
     np.savetxt(results_dir + '/spec/' + galaxy_id,
                np.array([manga.wl, integrated_flux, integrated_flux_err]).T)
-    if i == 5:
-        break
+    manga.close_cube()
+    # if i == 5:
+    #     break
 all_ew = np.array(all_ew)
 all_gr = np.array(all_gr)
 all_d4000 = np.array(all_d4000)
