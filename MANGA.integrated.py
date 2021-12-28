@@ -21,7 +21,7 @@ import os
 lib = pyphot.get_library()
 filters = [lib[filter_i] for filter_i in ['SDSS_g', 'SDSS_r']]
 
-cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz'
+cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz'
 cubes = glob(cubes_path)
 
 results_dir = 'MANGA-results/'
@@ -29,7 +29,8 @@ results_dir = 'MANGA-results/'
 all_ew = []
 all_gr = []
 all_d4000 = []
-for cube_path in cubes:
+for i, cube_path in enumerate(cubes):
+    print(i+1)
     manga = MANGACube(path=cube_path, abs_path=True)
     galaxy_id = manga.plate + '-' + manga.ifudesign
     manga.get_flux()
@@ -75,7 +76,8 @@ for cube_path in cubes:
 
     np.savetxt(results_dir + '/spec/' + galaxy_id,
                np.array([manga.wl, integrated_flux, integrated_flux_err]).T)
-
+    if i == 5:
+        break
 all_ew = np.array(all_ew)
 all_gr = np.array(all_gr)
 all_d4000 = np.array(all_d4000)
