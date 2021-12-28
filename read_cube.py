@@ -298,13 +298,15 @@ class CALIFACube(Cube):
 
 
 class MANGACube(Cube):
-    def __init__(self, plate=None, ifudesign=None, path=None, logcube=True, abs_path=False):        
+    def __init__(self, plate=None, ifudesign=None, path=None, logcube=True,
+                 abs_path=False):        
         self.pixel_size = 0.5  # arcsec
         self.pixel_surface = self.pixel_size**2  # arcsec^2
         self.plate, self.ifudesign = plate, ifudesign
         cube_wl_sampling = {True: 'LOGCUBE.fits.gz', False: 'LINCUBE.fits.gz'}
         if abs_path:
             self.path_to_cube = path
+            self.plate, self.ifudesign = path.split('/')[-1].split('-')[1:3]
         else:
             self.path_to_cube = '/home/pablo/obs_data/MANGA/cubes/' +\
                                 'manga-'+self.plate+'-'+self.ifudesign+'-' +\
@@ -339,6 +341,10 @@ class MANGACube(Cube):
         self.n_bad_pix[self.bad_pix] = 1
         self.n_bad_pix = np.sum(self.n_bad_pix, axis=(0))
 
+    def get_image(self, band='r'):
+        keys = {'g': 12, 'r': 13, 'i': 14, 'z': 15}
+        return self.cube[keys[band]].data
+
     def mask_bad(self):
         print('MASKING BAD PIXELS WITH "NAN"')
         self.flux[self.bad_pix] = np.nan
@@ -346,11 +352,11 @@ class MANGACube(Cube):
         bad = self.flux_error/self.flux > 1000
         self.flux_error[bad] = self.flux_error[~bad].max()
 
-    def get_redshift(self):        
+    def get_redshift(self):
         self.redshift = self.get_catalog(field='NSA_Z')
-                
+
     def get_catalog(self, field=None):
-        self.catalog_path = 'drpall-v2_4_3.fits'
+        self.catalog_path = 'drpall-v3_1_1.fits'
         try:
             self.catalog
         except:
@@ -362,7 +368,7 @@ class MANGACube(Cube):
             return self.catalog[field][self.cat_entry]
     
     def get_derived_catalog(self, field=None, line_field=None):
-        self.derived_catalog_path = 'dapall-v2_4_3-2.2.1.fits'
+        self.derived_catalog_path = 'dapall-v3_1_1-3.1.0.fits'
         try:
             self.derived_catalog
         except:
