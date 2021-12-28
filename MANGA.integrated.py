@@ -82,4 +82,5 @@ all_d4000 = np.array(all_d4000)
 
 np.savetxt(results_dir + 'manga_proxies',
            np.array([all_ew, all_gr, all_d4000]).T,
-           header='EW(Ha), g-r, D4000')
+           header='EW(Ha), g-r, D4000',
+           fmt='%.4f')

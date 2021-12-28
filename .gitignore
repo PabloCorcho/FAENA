@@ -3,3 +3,5 @@ ew_test/
 tests/
 endurance/
 MANGA-results/
+__pycache__/
+**/**/.pyc
