@@ -21,7 +21,8 @@ import os
 lib = pyphot.get_library()
 filters = [lib[filter_i] for filter_i in ['SDSS_g', 'SDSS_r']]
 
-cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz'
+cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz' # endurance
+cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz' # roach
 cubes = glob(cubes_path)
 
 results_dir = 'MANGA-results/'
@@ -43,7 +44,7 @@ for i, cube_path in enumerate(cubes):
     flux = manga.flux
     flux_err = manga.flux_error
     integrated_flux = np.nansum(flux[:, ~mask], axis=1)
-    integrated_flux_err = np.nansum(flux_err[:, ~mask], axis=1)
+    integrated_flux_err = np.sqrt(np.nansum(flux_err[:, ~mask]**2, axis=1))
     balmer_break, ha, hb, hg, hd = compute_all_ew(wl=manga.wl,
                                                   spec=integrated_flux)
     g_flux, g_mag = AB_mags(wl=manga.wl, spec=integrated_flux,
@@ -70,7 +71,7 @@ for i, cube_path in enumerate(cubes):
     ax.imshow(np.log10(r_image), origin='lower', cmap='terrain',
               interpolation='none')
     ax.contour(np.array(mask, dtype=int), levels=[1], colors='orange')
-    fig.savefig(results_dir + '/QC/' + galaxy_id)
+    fig.savefig(results_dir + '/QC/' + galaxy_id, bbox_inches='tight')
     fig.clear()
     plt.close()
 
