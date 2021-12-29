@@ -14,7 +14,7 @@ from astropy.convolution import Gaussian2DKernel
 import astropy.io.fits as fits
 from scipy.optimize import curve_fit
 import numpy as np
-from matplotlib import pyplot as plt
+z<from matplotlib import pyplot as plt
 
 
 def gaussian2d(vector, amplitude, x0, y0, sigmax, sigmay, rho):
@@ -67,7 +67,7 @@ def deblend_stars(image, ew_map=None, sigma_thresh=3., fwhm_pix=3.,
     # Estimating the image signal threshold
     threshold = detect_threshold(image, nsigma=sigma_thresh)
     # Kernel smoothing
-    # sigma_pixels = FWHM_pixels / conversion_factor
+    # FWHM_pixels / conversion_factor
     kernel_sigma = fwhm_pix / (2.0 * np.sqrt(2.0 * np.log(2.0)))
     kernel = Gaussian2DKernel(kernel_sigma,
                               x_size=int(fwhm_pix),
@@ -203,6 +203,6 @@ def deblend_stars(image, ew_map=None, sigma_thresh=3., fwhm_pix=3.,
             hdu.writeto(fits_path, overwrite=True)
             hdu.close()
             print('File saved as: ' + fits_path)
-        return total_mask, stellar_masks.shape[0]
+        return total_mask
     else:
-        return np.zeros_like(image, dtype=bool), 0
+        return np.zeros_like(image, dtype=bool)

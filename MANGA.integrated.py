@@ -22,15 +22,20 @@ from tqdm import tqdm
 lib = pyphot.get_library()
 filters = [lib[filter_i] for filter_i in ['SDSS_g', 'SDSS_r']]
 
-cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz' # endurance
-# cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz' # roach
+# cubes_path = '/media/pablo/Elements/MANGA/DR17/cubes/*.fits.gz' # endurance
+cubes_path = '/home/pablo/obs_data/MANGA/cubes/*.fits.gz' # roach
 cubes = glob(cubes_path)
 
 results_dir = 'MANGA-results/'
 
-all_ew = []
+all_ew_ha = []
+all_ew_hb = []
+all_ew_hg = []
+all_ew_hd = []
 all_gr = []
 all_d4000 = []
+all_id = []
+stars_in_field = []
 for i in tqdm(range(len(cubes))):
     cube_path = cubes[i]
     manga = MANGACube(path=cube_path, abs_path=True)
@@ -39,20 +44,32 @@ for i in tqdm(range(len(cubes))):
     manga.get_redshift()
     manga.get_wavelength(to_rest_frame=True)
     r_image = manga.get_image('r')
-    mask = deblend_stars(r_image,
-                         output_dir=results_dir + 'stars/' + galaxy_id + '_')
+    try:
+        mask, nstars = deblend_stars(r_image,
+                                     output_dir=results_dir + 'stars/' + galaxy_id + '_')
+    except:
+        mask = np.zeros_like(r_image, dtype=bool)
+        nstars = -99
+        print('WARNING: Failure during stellar masking, assuming 0 stars')
+
+    all_id.append(galaxy_id)
+    stars_in_field.append(nstars)
 
     flux = manga.flux
     flux_err = manga.flux_error
     integrated_flux = np.nansum(flux[:, ~mask], axis=1)
     integrated_flux_err = np.sqrt(np.nansum(flux_err[:, ~mask]**2, axis=1))
+
     balmer_break, ha, hb, hg, hd = compute_all_ew(wl=manga.wl,
                                                   spec=integrated_flux)
     g_flux, g_mag = AB_mags(wl=manga.wl, spec=integrated_flux,
                             filter=filters[0])
     r_flux, r_mag = AB_mags(wl=manga.wl, spec=integrated_flux,
                             filter=filters[1])
-    all_ew.append(ha[-1])
+    all_ew_ha.append(ha[-1])
+    all_ew_hb.append(hb[-1])
+    all_ew_hg.append(hg[-1])
+    all_ew_hd.append(hd[-1])
     all_gr.append(g_mag - r_mag)
     all_d4000.append(balmer_break)
 
@@ -79,13 +96,25 @@ for i in tqdm(range(len(cubes))):
     np.savetxt(results_dir + '/spec/' + galaxy_id,
                np.array([manga.wl, integrated_flux, integrated_flux_err]).T)
     manga.close_cube()
+
     # if i == 5:
     #     break
-all_ew = np.array(all_ew)
+all_ew_ha = np.array(all_ew_ha)
+all_ew_hb = np.array(all_ew_hb)
+all_ew_hg = np.array(all_ew_hg)
+all_ew_hd = np.array(all_ew_hd)
+
 all_gr = np.array(all_gr)
 all_d4000 = np.array(all_d4000)
+all_id = np.array(all_id)
+stars_in_field = np.array(stars_in_field)
 
-np.savetxt(results_dir + 'manga_proxies',
-           np.array([all_ew, all_gr, all_d4000]).T,
-           header='EW(Ha), g-r, D4000',
-           fmt='%.4f')
+np.savetxt(results_dir + 'stars_detected',
+           np.array([all_id, stars_in_field]).T,
+           header='ID, Nstars',
+           fmt='%s')
+np.savetxt(results_dir + 'manga_proxies_',
+           np.array([all_id, all_ew_ha, all_ew_hb, all_ew_hg, all_ew_hd,
+                     all_gr, all_d4000]).T,
+           header='ID, EW(Ha), EW(Hb), EW(Hg), EW(Hd), g-r, D4000',
+           fmt='%s')
