@@ -13,7 +13,6 @@ from matplotlib import pyplot as plt
 
 from deblend_stars import deblend_stars
 import pyphot
-import extinction
 from measurements.equivalent_width import compute_all_ew
 from measurements.photometry import AB_mags
 import os

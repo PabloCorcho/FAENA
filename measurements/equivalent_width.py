@@ -46,7 +46,7 @@ def equivalent_width(wl, spec, central_lims, left_lims, right_lims):
         right_cont = np.nanmean(spec[right_pts])
         pseudocont = left_weight * left_cont + right_weight * right_cont
         flux = np.trapz(spec[lick_pts], wl[lick_pts])
-        ew = (lick_wl[1] - lick_wl[0]) - flux/pseudocont
+        ew = (wl[lick_pts][-1] - wl[lick_pts][0]) - flux/pseudocont
         # ew = (lick_wl[1] - lick_wl[0]) - np.trapz(
         #     spec[lick_pts]/pseudocont(wl[lick_pts]), wl[lick_pts])
     return flux, pseudocont, ew
