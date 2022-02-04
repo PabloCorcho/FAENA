@@ -9,7 +9,9 @@ Created on Wed Feb 21 00:56:46 2018
 import numpy as np
 
 import os
-import units
+from astropy import constants as cts
+from astropy import units as u
+#import units
 from scipy import interpolate
 
 
@@ -207,7 +209,7 @@ class magnitude(Filter):
     def __init__(self, absolute=False, **kwargs):
         
         Filter.__init__(self, **kwargs)
-        self.nu = units.c/( self.wavelength*1e-10 )
+        self.nu = cts.c.value/( self.wavelength*1e-10 )
         self.flux = kwargs['flux']     
         
         if 'flux_err' in kwargs.keys():
@@ -225,7 +227,7 @@ class magnitude(Filter):
          magnitude computation or in erg/s/cm2 for apparent magnitude. """
  
         if self.absolute==True: 
-            self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   # flux at 10 pc.
+            self.flux = self.flux/(4*np.pi* (10*u.pc.to('cm').value)**2)   # flux at 10 pc.
         
         F_nu = self.flux/self.nu
         
@@ -281,8 +283,8 @@ class magnitude(Filter):
         flux_vega=np.loadtxt('Filters/alpha_lyr.dat',usecols=2)
         
         if self.absolute == True:
-            flux_vega=( flux_vega * 4*np.pi*(25.30*units.ly/units.cm)**2 ) / (4*np.pi* (10*units.pc/units.cm)**2)
-            self.flux = self.flux/(4*np.pi* (10*units.pc/units.cm)**2)   #flux at 10 pc
+            flux_vega=(flux_vega * 4*np.pi*(25.30*u.lyr.to('cm').value**2 ) / (4*np.pi* (10*u.pc.to('cm').value)**2))
+            self.flux = self.flux/(4*np.pi* (10*u.pc.to('cm').value)**2)   #flux at 10 pc
             
             
         vega_filter=Filter.new_filter(self.wl_filter, self.filter_resp , wl_vega)
