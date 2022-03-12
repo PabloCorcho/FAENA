@@ -397,7 +397,7 @@ class MANGACube(Cube):
         try:
             self.catalog
         except Exception:
-            with fits.open('/home/pablo/obs_data/MANGA/'
+            with fits.open('input_data/ifu_catalogs/MANGA/'
                            + self.catalog_path) as f:
                 self.catalog = f[1].data
             self.cat_entry = np.where(
@@ -412,7 +412,7 @@ class MANGACube(Cube):
         try:
             self.derived_catalog
         except Exception:
-            with fits.open('/home/pablo/obs_data/MANGA/'
+            with fits.open('input_data/ifu_catalogs/MANGA/'
                            + self.derived_catalog_path) as f:
                 self.derived_catalog = f[1].data
                 self.derived_catalog_lines = f[0].header
