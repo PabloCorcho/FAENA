@@ -329,9 +329,10 @@ class CALIFACube(Cube):
 class MANGACube(Cube):
     """todo."""
     # TODO: THIS SHOULD BE PROVIDED BY THE USER
-    catalog_path = os.path.join(os.path.realpath(__file__), 'input_data',
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    catalog_path = os.path.join(file_dir, 'input_data',
                                 'ifu_catalogs', 'MANGA', 'drpall-v3_1_1.fits')
-    derived_catalog_path = os.path.join(os.path.realpath(__file__),
+    derived_catalog_path = os.path.join(file_dir,
                                         'input_data', 'ifu_catalogs', 'MANGA',
                                         'dapall-v3_1_1-3.1.0.fits')
 
