@@ -278,7 +278,7 @@ class SFH(object):
         """
         try:
             self.ssp_masses
-        except:  # FIXME
+        except Exception:  # FIXME
             self.compute_ssp_masses(**kwargs)
         if not hasattr(self.SSP, 'binning'):
             self.SSP.get_binning()
