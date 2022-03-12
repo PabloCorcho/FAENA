@@ -116,7 +116,7 @@ __pycache__/*
 CALIFA-results/
 CALIFA*
 GIST_PIPE3D/
-MANGA*
+src/FAENA/input_data/
 compare_GIST_ssp_bases.py
 ngc0237.py
 .swp
