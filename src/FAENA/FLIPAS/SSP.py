@@ -12,21 +12,20 @@ from astropy import units as u
 from photutils.centroids import centroid_com
 from matplotlib import pyplot as plt
 
-flux_norm = u.def_unit('10^{-16} erg/s/cm^2', 1e-16 * u.erg/u.s/u.cm**2)
 
 class SSP(SSP_model):
-    """
-    This class recieves as input the SSP fits extension (output from Pipe3D)
-    """
+    """Recieves as input the SSP fits extension (output from Pipe3D)."""
+
+    flux_norm = u.def_unit('10^{-16} erg/s/cm^2', 1e-16 * u.erg/u.s/u.cm**2)
 
     def __init__(self, SSP_extension, **kwargs):
         SSP_model.__init__(self)
         self.verbose = kwargs['verbose']
         self.SSP_data = SSP_extension
         self.read_ssp_data()
-        
 
     def read_ssp_data(self):
+        """todo."""
         if self.verbose:
             print('· [SSP MODULE] READING --> Header extensions')
         hdr = self.SSP_data.header
@@ -48,19 +47,23 @@ class SSP(SSP_model):
                     self.SSP_variables[number]['DESC'] = hdr[key]
 
     def get_normalization_flux(self):
-        self.median_flux = self.get_variable(3) * flux_norm
-        self.median_flux_error = self.get_variable(4) * flux_norm
+        """todo."""
+        self.median_flux = self.get_variable(3) * self.flux_norm
+        self.median_flux_error = self.get_variable(4) * self.flux_norm
         return self.median_flux, self.median_flux_error
 
     def get_pseudo_v_band_map(self):
-        self.pseudo_v_band_map = self.get_variable(0) * flux_norm
+        """todo."""
+        self.pseudo_v_band_map = self.get_variable(0) * self.flux_norm
         return self.pseudo_v_band_map
 
     def get_dezonification(self):
+        """todo."""
         self.dezonification = self.get_variable(2)
         return self.dezonification
 
     def get_binning(self):
+        """todo."""
         self.get_dezonification()
         self.binning = self.get_variable(1)
         # Bin == 0 accounts for the non-binned regions
@@ -78,39 +81,48 @@ class SSP(SSP_model):
         return self.binning
 
     def get_Av_map(self):
+        """todo."""
         self.av_map = self.get_variable(11)
         self.av_map_err = self.get_variable(12)
         return self.av_map, self.av_map_err
 
     def get_luminosity_w_age_map(self):
+        """todo."""
         self.luminisity_w_age_map = self.get_variable(5)
         return self.luminisity_w_age_map
 
     def get_mass_w_age_map(self):
+        """todo."""
         self.mass_w_age_map = self.get_variable(6)
         return self.mass_w_age_map
 
     def get_luminosity_w_met_map(self):
+        """todo."""
         self.luminisity_w_age_map = self.get_variable(8)
         return self.luminisity_w_age_map
 
     def get_mass_w_met_map(self):
+        """todo."""
         self.mass_w_age_map = self.get_variable(9)
         return self.mass_w_age_map
 
     def get_mass_to_light(self):
+        """todo."""
         self.mass_to_light = self.get_variable(17)
         return self.mass_to_light
 
     def get_mass_dens_dust_corr(self):
+        """todo."""
         self.mass_dens_dust_corr = self.get_variable(19)
         return self.mass_dens_dust_corr
 
     def get_mass_dens(self):
+        """todo."""
         self.mass_dens_dust_corr = self.get_variable(18)
         return self.mass_dens_dust_corr
 
     def get_variable(self, var_number):
+        """todo."""
         if self.verbose:
             print('· [SSP MODULE] READING')
             print('         FILE --> {}'.format(
@@ -122,18 +134,20 @@ class SSP(SSP_model):
         return self.SSP_data.data[var_number]
 
     def get_redshift(self, redshift):
+        """todo."""
         # FIXME
         self.redshift = redshift
 
     def bin_map(self, _map, mode='sum', weight=False):
+        """todo."""
         try:
             self.binning
-        except:  # FIXME: Choose appropiate error exception
+        except Exception:  # FIXME: Choose appropiate error exception
             self.get_binning()
         try:
             _map.unit
             unit = _map.unit
-        except:  # FIXME: Choose appropiate error exception
+        except Exception:  # FIXME: Choose appropiate error exception
             unit = 1
         if mode == 'sum':
             func = np.sum
@@ -153,23 +167,26 @@ class SSP(SSP_model):
         return binned_map
 
     def coadded_spectral_empirical_correlation(self, n_spaxels):
+        """todo."""
         # alpha = {'V500': 1.10, 'V1200': 1.08, 'COMB': 1.08}
         beta = 1 + 1.10 * np.log10(n_spaxels)
         return beta
 
     def compute_com(self):
+        """todo."""
         try:
             self.median_flux
-        except:
+        except Exception:
             self.get_normalization_flux()
         com = centroid_com(self.median_flux)
         self.center_of_mass = com
         return com
 
     def plot_binned_map(self, _binned_map, **kwargs):
+        """todo."""
         try:
             unit = _binned_map.unit
-        except:
+        except Exception:
             unit = 1 * u.m/u.m
         _map = np.zeros_like(self.binning) * unit
         _map[:, :] = np.nan
@@ -189,9 +206,10 @@ class SSP(SSP_model):
         return fig, cbar
 
     def binned_to_map(self, _binned_map):
+        """todo."""
         try:
             unit = _binned_map.unit
-        except:
+        except Exception:
             unit = 1 * u.m/u.m
         _map = np.zeros_like(self.binning) * unit
         _map[:, :] = np.nan

@@ -21,7 +21,7 @@ from photutils.aperture import CircularAperture
 from photutils.aperture import aperture_photometry
 
 
-def compute_eff_radii(image, plot=False):
+def compute_eff_radii(image, mass_radius=2., plot=False):
     max_pix_rad = np.min(image.shape)//2
     radius = np.arange(3, max_pix_rad, 3)
     fake_image = np.zeros_like(image)
@@ -39,30 +39,29 @@ def compute_eff_radii(image, plot=False):
     norm_aperture_sum = aperture_sum / aperture_sum[-1]
     half_mass_rad = np.interp(0.5, norm_aperture_sum, radius)
     half_mass_aperture = CircularAperture((com_x, com_y), r=half_mass_rad)
-    two_half_mass_aperture = CircularAperture((com_x, com_y),
-                                              r=2*half_mass_rad)
+    nhalf_mass_aperture = CircularAperture((com_x, com_y),
+                                           r=mass_radius * half_mass_rad)
     half_mass_table = aperture_photometry(image, half_mass_aperture)
-    two_half_mass_table = aperture_photometry(image, two_half_mass_aperture)
+    nhalf_mass_table = aperture_photometry(image, nhalf_mass_aperture)
     if plot:
         fig = plt.figure()
         plt.imshow(np.log10(image))
         plt.colorbar(label='log(image)')
         plt.plot(com_x, com_y, '+', markersize=8, color='c')
         half_mass_aperture.plot(color='r', lw=2,
-                                label=r'Half mass rad')
-        two_half_mass_aperture.plot(color='orange', lw=2,
-                                    label=r'Two half mass rad')
+                                label=r'1 Re')
+        nhalf_mass_aperture.plot(color='orange', lw=2,
+                                 label=r'{:2.1f} Re'.format(mass_radius))
         plt.annotate('Tot mass={:.2}\nHalf mass={:.2}\nTwoHalf mass={:.2}'.
                      format(float(aperture_sum[-1]),
                             float(half_mass_table['aperture_sum'].value),
-                            float(two_half_mass_table['aperture_sum'].value)),
+                            float(nhalf_mass_table['aperture_sum'].value)),
                      xy=(.1, 1), xycoords='axes fraction', va='bottom')
         plt.legend()
         plt.close()
-        return half_mass_aperture, two_half_mass_aperture, fig
+        return half_mass_aperture, nhalf_mass_aperture, fig
     else:
-        return half_mass_aperture, two_half_mass_aperture
-    
+        return half_mass_aperture, nhalf_mass_aperture
 # %%
 def half_mass(image):
     """

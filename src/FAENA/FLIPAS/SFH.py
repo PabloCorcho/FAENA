@@ -142,7 +142,12 @@ class SFH(object):
                 * ssp_alive_stellar_mass[:, np.newaxis, np.newaxis]
                 * dezon[np.newaxis, :, :]
                             )
-        self.ssp_masses_err = np.sqrt(
+        if ssp_weights_err.shape != ssp_weights.shape:
+            print('[SFH] · Warning!  SSP Weights errors are not provided')
+            self.ssp_masses_err = np.full_like(self.ssp_masses,
+                                               fill_value=np.nan)
+        else:
+            self.ssp_masses_err = np.sqrt(
                 ssp_weights_err**2 * median_luminosity[np.newaxis, :, :]**2
                 + (0.4 * np.log(10) * av_map_err[np.newaxis, :, :])**2
                 * ssp_weights**2 * median_luminosity[np.newaxis, :, :]**2

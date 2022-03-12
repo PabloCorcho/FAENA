@@ -31,7 +31,7 @@ def equivalent_width(wl, spec, central_lims, left_lims, right_lims):
     mean_lick_wl = lick_wl.mean()
     left_pts = np.where((wl >= left_wl[0]) & (wl <= left_wl[1]))[0]
     right_pts = np.where((wl >= right_wl[0]) & (wl <= right_wl[1]))[0]
-    lick_pts = np.where((wl > lick_wl[0]) & (wl < lick_wl[1]))[0]
+    lick_pts = np.where((wl >= lick_wl[0]) & (wl <= lick_wl[1]))[0]
     right_weight = (mean_lick_wl - mean_left_wl
                     ) / (mean_right_wl - mean_left_wl)
     left_weight = 1 - right_weight
@@ -39,30 +39,38 @@ def equivalent_width(wl, spec, central_lims, left_lims, right_lims):
         left_cont = np.nanmean(spec[left_pts, :], axis=0)
         right_cont = np.nanmean(spec[right_pts, :], axis=0)
         pseudocont = left_weight * left_cont + right_weight * right_cont
-        flux = np.trapz(spec[lick_pts], wl[lick_pts], axis=0)
-        ew = (lick_wl[1] - lick_wl[0]) - flux/pseudocont
+        flux = np.nanmean(spec[lick_pts], axis=0)
+        ew = (lick_wl[1] - lick_wl[0])*(1 - flux/pseudocont)
     else:
         left_cont = np.nanmean(spec[left_pts])
         right_cont = np.nanmean(spec[right_pts])
         pseudocont = left_weight * left_cont + right_weight * right_cont
-        flux = np.trapz(spec[lick_pts], wl[lick_pts])
-        ew = (wl[lick_pts][-1] - wl[lick_pts][0]) - flux/pseudocont
+        flux = np.nanmean(spec[lick_pts])
+        ew = (lick_wl[1] - lick_wl[0]) * (1 - flux/pseudocont)
         # ew = (lick_wl[1] - lick_wl[0]) - np.trapz(
         #     spec[lick_pts]/pseudocont(wl[lick_pts]), wl[lick_pts])
     return flux, pseudocont, ew
 
 
-def compute_balmer_break(wl, spec):
+def compute_balmer_break(wl, spec, spec_err=None):
+    if spec_err is None:
+        spec_err = np.full_like(spec, fill_value=np.nan)
     left_wl = np.array([3850, 3950])
     right_wl = np.array([4050, 4250])
     left_pts = np.where((wl > left_wl[0]) & (wl < left_wl[1]))[0]
     right_pts = np.where((wl > right_wl[0]) & (wl < right_wl[1]))[0]
-    left_flux = np.trapz(spec[left_pts], wl[left_pts],
-                         axis=0) / (left_wl[1] - left_wl[0])
-    right_flux = np.trapz(spec[right_pts], wl[right_pts],
-                          axis=0) / (right_wl[1] - right_wl[0])
+    # left_flux = np.trapz(spec[left_pts], wl[left_pts],
+    #                      axis=0) / (left_wl[1] - left_wl[0])
+    # right_flux = np.trapz(spec[right_pts], wl[right_pts],
+    #                       axis=0) / (right_wl[1] - right_wl[0])
+    left_flux = np.nanmean(spec[left_pts])
+    right_flux = np.nanmean(spec[right_pts])
+    left_flux_err = np.nanstd(spec[left_pts])
+    right_flux_err = np.nanstd(spec[right_pts])
     d4000 = right_flux/left_flux
-    return d4000
+    d4000_err = np.sqrt(d4000**2 * (
+        (right_flux_err/right_flux)**2 + (left_flux_err/left_flux)**2))
+    return d4000, d4000_err
 
 
 def compute_all_ew(wl, spec):

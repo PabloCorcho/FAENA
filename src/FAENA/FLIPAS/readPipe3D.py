@@ -13,39 +13,41 @@ from .ELINES import ELINES
 
 
 class Flipas(object):
+    """todo."""
 
     def __init__(self, path, readSSP=True, readSFH=True, readELINES=True,
                  readINDICES=True, verbose=True):
         self.verbose = verbose
         if self.verbose:
-            print('---------------------\n Initialising FLIPAS \n---------------------')
+            print('---------------------\n Initialising FLIPAS'
+                  + '\n---------------------')
             print('· READING --> Opening file: '+path)
 
-        hdul = fits.open(path)  # Pipe3D complete output (compressed .gz file)
+        self.hdul = fits.open(path)  # Pipe3D complete output (compressed .gz file)
 
-        self.read_headers(hdul)
-        
+        self.read_headers(self.hdul)
 
         if 'ORG_HDR' in self.hdr_names:
-            self.original_hdr = hdul['ORG_HDR'].header
+            self.original_hdr = self.hdul['ORG_HDR'].header
 
         if readSSP:
-            self.SSP = SSP(hdul[self.hdr_names.index('SSP')],
+            self.SSP = SSP(self.hdul[self.hdr_names.index('SSP')],
                            verbose=self.verbose)
             # z = self.original_hdr['MED_VEL']/3e5
             # self.SSP.get_redshift(z)
             # print('· [WARNING] FITS FILE DOES NOT CONTAIN SSP EXTENSION!¯')
         if readSFH:
-            self.SFH = SFH(hdul[self.hdr_names.index('SFH')], SSP=self.SSP,
+            self.SFH = SFH(self.hdul[self.hdr_names.index('SFH')], SSP=self.SSP,
                            verbose=self.verbose)
 
         if readELINES:
-            self.ELINES = ELINES(hdul[self.hdr_names.index('FLUX_ELINES')],
+            self.ELINES = ELINES(self.hdul[self.hdr_names.index('FLUX_ELINES')],
                                  verbose=self.verbose)
             # print('· [WARNING] FITS FILE DOES NOT CONTAIN SFH EXTENSION!')
-
+        # hdul.close()
 # -----------------------------------------------------------------------------
     def read_headers(self, hdul_file):
+        """todo."""
         if self.verbose:
             print('· READING --> Headers')
         n_entries = len(hdul_file)

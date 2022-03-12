@@ -17,28 +17,43 @@ from scipy import interpolate
 
 # USING PYPHOT
 
-def AB_mags(wl, spec, filter):
+def AB_mags(wl, spec, filter, spec_err=None):
+    if spec_err is None:
+        spec_err = np.full_like(spec, fill_value=np.nan)
     T = filter.reinterp(wl)
     nu = 3e18/wl  # [c] = [AA/s]
     if len(spec.shape) > 1:
         f_nu = spec * (wl / nu)[:, np.newaxis]
+        f_nu_err = spec_err * (wl / nu)[:, np.newaxis]
         int_f_nu = np.trapz(f_nu * T.transmit[:, np.newaxis], np.log(wl),
                             axis=0)
+        int_f_nu_err = np.sqrt(np.trapz(
+                f_nu_err**2 * T.transmit[:, np.newaxis], np.log(wl),
+                axis=0))
+
         norm = np.trapz(T.transmit, np.log(wl))
         sq_pivot_wl = np.trapz(T.transmit * wl, wl) / np.trapz(T.transmit,
                                                                np.log(wl))
         int_f_lambda = int_f_nu / norm * 3e18 / sq_pivot_wl
+        int_f_lambda_err = int_f_nu_err / norm * 3e18 / sq_pivot_wl
         AB = -2.5 * np.log10(int_f_nu / norm) - 48.60
+        AB_err = (2.5/np.log(10)) * int_f_nu_err/int_f_nu
     else:
         f_nu = spec * (wl / nu)
+        f_nu_err = spec_err * (wl / nu)
         int_f_nu = np.trapz(f_nu * T.transmit, np.log(wl),
                             axis=0)
+        int_f_nu_err = np.sqrt(np.trapz(
+                f_nu_err**2 * T.transmit, np.log(wl),
+                axis=0))
         norm = np.trapz(T.transmit, np.log(wl))
         sq_pivot_wl = np.trapz(T.transmit * wl, wl) / np.trapz(T.transmit,
                                                                np.log(wl))
         int_f_lambda = int_f_nu / norm * 3e18 / sq_pivot_wl
+        int_f_lambda_err = int_f_nu_err / norm * 3e18 / sq_pivot_wl
         AB = -2.5 * np.log10(int_f_nu / norm) - 48.60
-    return int_f_lambda, AB
+        AB_err = (2.5/np.log(10)) * int_f_nu_err/int_f_nu
+    return int_f_lambda, int_f_lambda_err, AB, AB_err
 
 # =============================================================================
 class Filter(object):
