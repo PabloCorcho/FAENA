@@ -14,6 +14,7 @@ from astropy import units as units
 import numpy as np
 from matplotlib import pyplot as plt
 
+import os
 # =============================================================================
 # COSMOLOGY
 # =============================================================================
@@ -327,6 +328,12 @@ class CALIFACube(Cube):
 
 class MANGACube(Cube):
     """todo."""
+    # TODO: THIS SHOULD BE PROVIDED BY THE USER
+    catalog_path = os.path.join(os.path.realpath(__file__), 'input_data',
+                                'ifu_catalogs', 'MANGA', 'drpall-v3_1_1.fits')
+    derived_catalog_path = os.path.join(os.path.realpath(__file__),
+                                        'input_data', 'ifu_catalogs', 'MANGA',
+                                        'dapall-v3_1_1-3.1.0.fits')
 
     def __init__(self, plate=None, ifudesign=None, path=None, logcube=True,
                  abs_path=False):
@@ -393,11 +400,10 @@ class MANGACube(Cube):
 
     def get_catalog(self, field=None):
         """todo."""
-        self.catalog_path = 'drpall-v3_1_1.fits'
         try:
             self.catalog
         except Exception:
-            with fits.open('input_data/ifu_catalogs/MANGA/'
+            with fits.open(''
                            + self.catalog_path) as f:
                 self.catalog = f[1].data
             self.cat_entry = np.where(
@@ -408,12 +414,10 @@ class MANGACube(Cube):
 
     def get_derived_catalog(self, field=None, line_field=None):
         """todo."""
-        self.derived_catalog_path = 'dapall-v3_1_1-3.1.0.fits'
         try:
             self.derived_catalog
         except Exception:
-            with fits.open('input_data/ifu_catalogs/MANGA/'
-                           + self.derived_catalog_path) as f:
+            with fits.open(self.derived_catalog_path) as f:
                 self.derived_catalog = f[1].data
                 self.derived_catalog_lines = f[0].header
                 self.derived_cat_entry = np.where(
