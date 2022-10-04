@@ -25,6 +25,61 @@ def fit_line(wl, spec, line_wl, fitter=fitting.LevMarLSQFitter()):
     return fit
 
 
+def fit_twogauss(wl, spec, line_wl, fitter=fitting.LevMarLSQFitter()):
+    """Fit two gaussian profile to emission line."""
+    init_mu = line_wl
+    init_a = np.interp(np.array(init_mu), wl, spec)
+    init_sigma = init_mu * 100/3e5
+    max_sigma = init_mu * 300/3e5
+    model_init = (
+        models.Gaussian1D(init_a, init_mu, init_sigma)
+        + models.Gaussian1D(init_a, init_mu, init_sigma))
+    model_init.mean_0.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+    model_init.mean_1.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+    model_init.stddev_0.bounds = [0, max_sigma]
+    model_init.stddev_1.bounds = [0, max_sigma]
+    fit = fitter(model_init, wl, spec)
+    return fit
+
+
+def fit_multiple_lines(wl, spec, lines, n_components,
+                       fitter=fitting.LevMarLSQFitter()):
+    """blah."""
+    init_mu = lines[0]
+    init_a = np.interp(np.array(init_mu), wl, spec)
+    init_sigma = init_mu * 100/3e5
+    max_sigma = init_mu * 300/3e5
+    lines_model = models.Gaussian1D(init_a, init_mu, init_sigma)
+    lines_model.mean.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+    lines_model.stddev.bounds = [0, max_sigma]
+    lines_model.amplitude.bounds = [0, np.inf]
+    for i in range(n_components - 1):
+        i_model = models.Gaussian1D(init_a, init_mu, init_sigma)
+        i_model.amplitude.bounds = [0, np.inf]
+        i_model.mean.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+        i_model.stddev.bounds = [0, max_sigma]
+        lines_model += i_model
+
+    for line in lines[1:]:
+        init_mu = line
+        init_a = np.interp(np.array(init_mu), wl, spec)
+        init_sigma = init_mu * 100/3e5
+        max_sigma = init_mu * 300/3e5
+        line_model = models.Gaussian1D(init_a, init_mu, init_sigma)
+        line_model.mean.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+        line_model.stddev.bounds = [0, max_sigma]
+        line_model.amplitude.bounds = [0, np.inf]
+        for i in range(n_components - 1):
+            i_model = models.Gaussian1D(init_a, init_mu, init_sigma)
+            i_model.mean.bounds = [init_mu-max_sigma, init_mu+max_sigma]
+            i_model.stddev.bounds = [0, max_sigma]
+            i_model.amplitude.bounds = [0, np.inf]
+            line_model += i_model
+        lines_model += line_model
+    fit = fitter(lines_model, wl, spec)
+    return fit
+
+
 def line_flux(wl, spec, line_wl, spec_err=None, wl_lims=None, plot=False,
               **plotargs):
     """Measuring raw fluxes from straight integration."""

@@ -137,7 +137,7 @@ class SersicFit(object):
         # self.image /= np.nanmax(self.image)
         
         self.XX, self.YY = np.meshgrid(np.arange(self.image.shape[0]), 
-                          np.arange(self.image.shape[1]))
+                          np.arange(self.image.shape[1]), indexing='ij')
         
         x_o_g, y_o_g = centroid_com(self.image)
         self.com = np.array([x_o_g, y_o_g])
@@ -165,12 +165,12 @@ class SersicFit(object):
     def fit(self):
         
         p_init = Sersic2D(
-            amplitude=self.initial_guess[0], 
-            r_eff=self.initial_guess[1], 
-            n=self.initial_guess[2], 
-            x_0=self.initial_guess[3], 
-            y_0=self.initial_guess[4], 
-            ellip=self.initial_guess[5], 
+            amplitude=self.initial_guess[0],
+            r_eff=self.initial_guess[1],
+            n=self.initial_guess[2],
+            x_0=self.initial_guess[3],
+            y_0=self.initial_guess[4],
+            ellip=self.initial_guess[5],
             theta=self.initial_guess[6])
         fit_p = fitting.LevMarLSQFitter()
         
