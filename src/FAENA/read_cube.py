@@ -32,6 +32,7 @@ class Cube(object):
     Default flux units: 'erg/s/cm2/AA'
     Default wavelength units: AA
 
+    TODO: This should be an abstract class
     """
 
     def __init__(self):
@@ -222,7 +223,7 @@ class CALIFACube(Cube):
             self.path_to_cube = path
         else:
             self.path_to_cube = (
-                '/home/pablo/obs_data/CALIFA/'+data_release+'/'
+                '/home/pablo/Research/obs_data/CALIFA/'+data_release+'/'
                 + mode+'/cubes/'+path + '.'+mode + '.rscube.fits.gz')
 
         print('\nOpening CALIFA cube: ', self.path_to_cube, '\n')
@@ -273,12 +274,12 @@ class CALIFACube(Cube):
     def get_redshift(self):
         """todo."""
         if self.data_release == 'DR3':
-            names = np.loadtxt(
-                'ned_califa_redshifts.txt',
+            path = '/home/pablo/Research/obs_data/CALIFA/DR3/ned_califa_redshifts.txt'
+            names = np.loadtxt(path,
                 usecols=(0), dtype=str, delimiter=', ')
             ned_pos = np.where(names == self.name)[0]
             califa_redshift, ned_redshift, bad_califa = np.loadtxt(
-                'ned_califa_redshifts.txt',
+                path,
                 usecols=(1, 2, 3), unpack=True, delimiter=', ')
             if bad_califa[ned_pos] == 0:
                 self.redshift = califa_redshift[ned_pos]
@@ -346,7 +347,7 @@ class MANGACube(Cube):
             self.path_to_cube = path
             self.plate, self.ifudesign = path.split('/')[-1].split('-')[1:3]
         else:
-            self.path_to_cube = '/home/pablo/obs_data/MANGA/cubes/' +\
+            self.path_to_cube = '/home/pablo/Research/obs_data/MANGA/cubes/' +\
                                 'manga-'+self.plate+'-'+self.ifudesign+'-' +\
                                 cube_wl_sampling[logcube]
         Cube.__init__(self)
@@ -475,7 +476,7 @@ class SAMICube(Cube):
         if abs_path:
             self.path_to_cube = abs_path
         else:
-            self.path_to_cube = '/home/pablo/obs_data/SAMI/cubes/' +\
+            self.path_to_cube = '/home/pablo/Research/obs_data/SAMI/cubes/' +\
                                 '{}_A_cube_{}.fits.gz'.format(catid, arm)
         Cube.__init__(self)
 
@@ -517,7 +518,33 @@ class SAMICube(Cube):
 
     def get_redshift(self):        
         self.redshift = self.hdr['Z_SPEC'] # Heliocentric redshift from input catalogue
-                
+
+
+class HectorCube(Cube):
+    """..."""
+    def __init__(self, catid=None, arm=None, abs_path=False):                        
+        if abs_path:
+            self.path_to_cube = abs_path
+        else:
+            self.path_to_cube = '/home/pablo/Research/obs_data/SAMI/cubes/' +\
+                                '{}_A_cube_{}.fits.gz'.format(catid, arm)
+        Cube.__init__(self)
+    
+    def get_flux(self):
+        self.hdr = self.cube[0].header
+        self.flux = self.cube[0].data
+        self.flux_units = self.hdr['BUNIT']
+        self.flux_error = np.sqrt(self.cube[1].data)
+        # self.flux_error[np.isinf(self.flux_error)] = np.nan
+        print('Flux units:', self.flux_units)
+
+    def get_wavelength(self, to_rest_frame=False):
+        self.wl = self.hdr['CRVAL3']+(np.arange(self.flux.shape[0])-self.hdr['CRPIX3'])*self.hdr['CDELT3']
+        self.rest_frame = False
+        if to_rest_frame:
+            self.to_rest_frame()
+        else:
+            print('Wavelength vector is not in rest frame')        
     
 if __name__ == '__main__':
     # cube = CALIFACube(path='NGC0237')
@@ -595,5 +622,4 @@ if __name__ == '__main__':
     a, b, c, d, e = cube.compute_circular_aperture(centre=cube.pix_centre, 
                                     radius=Sfit.reff, plot=True,
                                     flux_return=True)
-    
     

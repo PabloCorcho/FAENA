@@ -19,15 +19,16 @@ def exp_sequence(xx, ew_ifty, k, alpha, ew_offset):
 class DemarcationLines(object):
     """..."""
 
+    ew_offset = 7
+
     def __init__(self):
-        self.ew_offset = 7
         self.dummy_d4000 = np.linspace(0.9, 2.5)
-        self.dummy_gr = np.linspace(0.7, 1.2)
-        self.ageing_sequence_params = (-4.5, 45, -1.7, self.ew_offset)
-        self.quenched_sequence_params = (1.8, -7, -0.9, self.ew_offset)
+        self.dummy_gr = np.linspace(0.01, 1.2)
+        # self.ageing_sequence_params = (-4.5, 45, -1.7, self.ew_offset)
+        # self.quenched_sequence_params = (1.8, -7, -0.9, self.ew_offset)
         # D4000 FIT
-        self.ageing_sequence_params_d4000 = (-4.3, 250, -1.2, self.ew_offset)
-        self.quenched_sequence_params_d4000 = (1.8, -12, -0.5, self.ew_offset)
+        # self.ageing_sequence_params_d4000 = (-4.3, 250, -1.2, self.ew_offset)
+        # self.quenched_sequence_params_d4000 = (1.8, -12, -0.5, self.ew_offset)
         self.params = {
             'ageing': {
                 'gr': (-4.5, 45, -1.7, self.ew_offset),

@@ -14,7 +14,12 @@ import numpy as np
 # Cumulative distribution
 # =============================================================================
 def get_cmf(x, weights=None, norm=False, axis=0):
-    """Compute the cumulative distribution function from an array x."""
+    """Compute the cumulative distribution function from an array x.
+
+    Returns
+    -------
+    x_sorted, cmf
+    """
     if weights is not None:
         pass
     else:
@@ -25,6 +30,23 @@ def get_cmf(x, weights=None, norm=False, axis=0):
         cmf /= cmf[-1]
     return x[sort_pos], cmf
 
+# =============================================================================
+# Compute contour containing a fraction
+# =============================================================================
+def compute_fraction_from_map(H, xedges=None, yedges=None, **kwargs):
+    """..."""
+    if xedges is None:
+        H_mass = H
+    else:
+        H_mass = (H * np.diff(xedges)[:, np.newaxis]
+                  * np.diff(yedges)[np.newaxis, :])
+    sorted_flat = np.argsort(H, axis=None)
+    sorted_2D = np.unravel_index(sorted_flat, H.shape)
+    density_sorted = H.flatten()[sorted_flat]
+    cumulative_mass = np.cumsum(H_mass[sorted_2D])
+    fraction_sorted = cumulative_mass/cumulative_mass[-1]
+    fraction = np.interp(H, density_sorted, fraction_sorted)
+    return fraction
 # ==========================================================================
 # Statistical distances
 # =============================================================================
